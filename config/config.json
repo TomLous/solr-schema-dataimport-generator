@@ -1,9 +1,20 @@
 {
     "name": "dataoutlet_eindverbuiker",
-    "version": "0.9.0",
+    "solrSchemaVersion": "1.5",
     "language_codes": ["en", "nl", "de", "fr", "es", "it", "cz", "pl", "hu", "pt"],
+    "data_sources":{
+        "live":{
+            "type": "JdbcDataSource",
+            "driver": "com.mysql.jdbc.Driver",
+            "url": "jdbc:mysql://[hostname]/[database]",
+            "user": "[solr]",
+            "password": "[password]",
+            "batchSize": -1
+        }
+    },
     "fields": {
         "_version_": {
+            "_comment": "If you remove this field, you must _also_ disable the update log in solrconfig.xml or Solr won't start. _version_ and update log are required for SolrCloud",
             "types": {
                 "_": "long"
             },
@@ -12,6 +23,7 @@
             "required": true
         },
         "_root_": {
+            "_comment": "Points to the root document of a block of nested documents. Required for nested document support, may be removed otherwise",
             "types": {
                 "_": "string"
             },
@@ -21,6 +33,7 @@
         },
 
         "id": {
+            "_comment": "Only remove the 'id' field if you have a very good reason to. While not strictly required, it is highly recommended. A <uniqueKey> is present in almost all Solr installations. See the <uniqueKey> declaration below where <uniqueKey> is set to 'id'.",
             "uniqueKey": true,
             "types": {
                 "_": "string"
@@ -681,7 +694,7 @@
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([\.,;:-_])",
+                            "pattern": "([\\.,;:-_])",
                             "replacement": " ",
                             "replace": "all"
                         },
@@ -692,7 +705,7 @@
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([^\w\d\*æøåÆØÅ ])",
+                            "pattern": "([^\\w\\d\\*æøåÆØÅ ])",
                             "replacement": "",
                             "replace": "all"
                         },
@@ -727,13 +740,13 @@
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([\.,;:-_])",
+                            "pattern": "([\\.,;:-_])",
                             "replacement": " ",
                             "replace": "all"
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([^\w\d\*æøåÆØÅ ])",
+                            "pattern": "([^\\w\\d\\*æøåÆØÅ ])",
                             "replacement": "",
                             "replace": "all"
                         },
@@ -778,7 +791,7 @@
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([\.,;:-_])",
+                            "pattern": "([\\.,;:-_])",
                             "replacement": " ",
                             "replace": "all"
                         },
@@ -789,7 +802,7 @@
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([^\w\d\*æøåÆØÅ ])",
+                            "pattern": "([^\\w\\d\\*æøåÆØÅ ])",
                             "replacement": "",
                             "replace": "all"
                         },
@@ -833,13 +846,13 @@
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([\.,;:-_])",
+                            "pattern": "([\\.,;:-_])",
                             "replacement": " ",
                             "replace": "all"
                         },
                         {
                             "class": "solr.PatternReplaceFilterFactory",
-                            "pattern": "([^\w\d\*æøåÆØÅ ])",
+                            "pattern": "([^\\w\\d\\*æøåÆØÅ ])",
                             "replacement": "",
                             "replace": "all"
                         },
