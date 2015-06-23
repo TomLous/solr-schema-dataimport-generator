@@ -8,7 +8,8 @@
 
 function jsonToXML(&$doc, &$el, $data, $dependancyData){
     foreach($data as $key=>$val){
-        $key = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $key);
+        $key = dependencyParser($key, $dependancyData);
+
 
         if(is_scalar($val)){
             if($val === true){
@@ -19,7 +20,7 @@ function jsonToXML(&$doc, &$el, $data, $dependancyData){
 
 
             if($key != 'pattern'){
-                $val = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $val);
+                $val = dependencyParser($val, $dependancyData);
             }
 
             if($val !== null){
@@ -64,4 +65,22 @@ function arrayCartesian($arrays) {
         }
     }
     return $result;
+}
+
+function createDependencyArray(&$fieldInfo, &$dependencyVariables){
+    $dependancyArray = array(array());
+    if(isset($fieldInfo['dependency'])){
+        $combinedArrays = array();
+        foreach($fieldInfo['dependency'] as $dependancyPlaceholder=>$dependancyVariable){
+            if($dependencyVariables[$dependancyVariable]){
+                $combinedArrays[$dependancyPlaceholder] = $dependencyVariables[$dependancyVariable];
+            }
+        }
+        $dependancyArray = arrayCartesian($combinedArrays);
+    }
+    return $dependancyArray;
+}
+
+function dependencyParser($val, &$data){
+    return preg_replace('/\[([^\]]+)\]/ies', "\$data['\\1'];", $val);
 }

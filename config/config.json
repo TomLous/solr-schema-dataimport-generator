@@ -1,15 +1,102 @@
 {
-    "name": "dataoutlet_eindverbuiker",
+    "name": "outlets",
     "solrSchemaVersion": "1.5",
-    "language_codes": ["en", "nl", "de", "fr", "es", "it", "cz", "pl", "hu", "pt"],
-    "data_sources":{
-        "live":{
+    "dependencyVariables":{
+        "language_codes": ["en", "nl", "de", "fr", "es", "it", "pl"]
+    },
+    "defaultMultivaluedDataSourceSplitBy": "⁞",
+    "dataSources":{
+        "global":{
             "type": "JdbcDataSource",
             "driver": "com.mysql.jdbc.Driver",
-            "url": "jdbc:mysql://[hostname]/[database]",
-            "user": "[solr]",
-            "password": "[password]",
+            "url": "jdbc:mysql://[hostname1]/[database1]",
+            "user": "[user1]",
+            "password": "[password1]",
             "batchSize": -1
+        },
+        "datawarehouse":{
+            "type": "JdbcDataSource",
+            "driver": "com.mysql.jdbc.Driver",
+            "url": "jdbc:mysql://[hostname2]/[database2]",
+            "user": "[user2]",
+            "password": "[password2]",
+            "batchSize": -1
+        }
+    },
+    "entityQueries":{
+        "eindverbuiker":{
+            "dataSource": "global",
+            "transformers": ["RegexTransformer"],
+            "tables": {
+                "main": ["FROM `eindverbruiker` ev"],
+                "all": ["LEFT JOIN `kenmerken_taal` kt_land ON ev.`land`=kt_land.`code` AND kt_land.`tabel`='land'",
+                        "LEFT JOIN `kenmerken_taal` kt_provincie ON ev.`provincie`=kt_provincie.`code` AND kt_provincie.`tabel`='provincie'",
+                        "LEFT JOIN `kenmerken_taal` kt_moeder ON ev.`scode`=kt_moeder.`code` AND kt_moeder.`tabel`='moeder'",
+                        "LEFT JOIN `kenmerken_taal` kt_scode ON ev.`scode`=kt_scode.`code` AND kt_scode.`tabel`='scode'",
+                        "LEFT JOIN `kenmerken_taal` kt_bcode ON ev.`bcode`=kt_bcode.`code` AND kt_bcode.`tabel`='bcode'"
+                ]
+            },
+            "queries": {
+                "query": {
+                    "filter": "WHERE ev.`status` > 0 GROUP BY ev.`klantnr`",
+                    "tables": ["main", "all"]
+                },
+                "deltaImportQuery": {
+                    "filter": "WHERE ev.`klantnr`='${dih.delta.id}' GROUP BY ev.`klantnr`",
+                    "tables": ["main", "all"]
+                },
+                "deltaQuery": {
+                    "filter": "WHERE ev.`updatedon` &gt; '${dih.last_index_time}'",
+                    "tables": ["main"],
+                    "fields": ["id"]
+                }
+            }
+        },
+        "eindverbuiker_features":{
+            "dataSource": "global",
+            "transformers": ["RegexTransformer"],
+            "parentEntity": "eindverbuiker",
+            "pk": "klantnr",
+            "tables": {
+                "main": ["FROM `eindverbruiker` ev"],
+                "all": ["LEFT JOIN `kenmerken_taal` kt_type ON kt_type.`tabel`='type' AND FIND_IN_SET(LEFT(kt_type.`code`,6),ev.`type`)",
+                    "LEFT JOIN `kenmerken_tags` kt01 ON kt01.`kenmerk01`=ev.`kenmerk01`",
+                    "LEFT JOIN `kenmerken_tags` kt03 ON kt03.`kenmerk03`=ev.`kenmerk03`",
+                    "LEFT JOIN `kenmerken_tags` kt04 ON kt04.`kenmerk04`=ev.`kenmerk04`",
+                    "LEFT JOIN `kenmerken_tags` kt05 ON kt05.`kenmerk05`=ev.`kenmerk05`",
+                    "LEFT JOIN `kenmerken_tags` kt06 ON kt06.`kenmerk06`=ev.`kenmerk06`",
+                    "LEFT JOIN `kenmerken_tags` kt07 ON kt07.`kenmerk07`=ev.`kenmerk07`",
+                    "LEFT JOIN `kenmerken_tags` kt09 ON kt09.`kenmerk09`=ev.`kenmerk09`",
+                    "LEFT JOIN `kenmerken_tags` kt11 ON FIND_IN_SET(kt11.`kenmerk11`,ev.`kenmerk11`)",
+                    "LEFT JOIN `kenmerken_tags` kt41 ON kt41.`kenmerk41`=ev.`kenmerk41`",
+                    "LEFT JOIN `kenmerken_tags` kt43 ON kt43.`kenmerk43`=ev.`kenmerk43`",
+                    "LEFT JOIN `kenmerken_tags` kt71 ON kt71.`kenmerk71`=ev.`kenmerk71`",
+                    "LEFT JOIN `kenmerken_tags` kt92 ON kt92.`kenmerk92`=ev.`kenmerk92`",
+                    "LEFT JOIN `kenmerken_tags` kt95 ON kt95.`kenmerk95`=ev.`kenmerk95`",
+                    "LEFT JOIN `kenmerken_tags` kt96 ON FIND_IN_SET(kt96.`kenmerk96`,ev.`kenmerk96`)",
+                    "LEFT JOIN `kenmerken_tags` kt97 ON FIND_IN_SET(kt97.`kenmerk97`,ev.`kenmerk97`)"
+                ]
+            },
+            "queries": {
+                "query": {
+                    "filter": "WHERE ev.`klantnr`= '${eindverbuiker.klantnr}'",
+                    "tables": ["main", "all"]
+                }
+            }
+        },
+        "surrounding":{
+            "dataSource": "datawarehouse",
+            "parentEntity": "eindverbuiker",
+            "pk": "klantnr",
+            "tables": {
+                "main": ["FROM `ev_surrounding` evs"]
+            },
+            "queries":{
+                "query": {
+                    "filter": "WHERE evs.`klantnr`= '${eindverbuiker.klantnr}' AND evs.`radius` = '0.4'",
+                    "tables": ["main"]
+                }
+            }
         }
     },
     "fields": {
@@ -40,7 +127,10 @@
             },
             "indexed": true,
             "stored": true,
-            "required": true
+            "required": true,
+            "dataSourceStatement": "ev.`klantnr`",
+            "dataSourceEntity":"eindverbuiker"
+
         },
         "dataoutlet_status": {
             "types": {
@@ -48,7 +138,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": true
+            "required": true,
+            "dataSourceStatement": "ev.`status`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "updatedon": {
             "types": {
@@ -56,7 +148,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "DATE_FORMAT(ev.`updatedon`,'%Y-%m-%dT%TZ')",
+            "dataSourceEntity":"eindverbuiker"
         },
 
         "name": {
@@ -70,7 +164,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": true
+            "required": true,
+            "dataSourceStatement": "ev.`naam`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "country_code": {
             "types": {
@@ -78,7 +174,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": true
+            "required": true,
+            "dataSourceStatement": "ev.`land`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "country_[lang]": {
             "types": {
@@ -93,7 +191,23 @@
             },
             "indexed": true,
             "stored": true,
-            "required": true
+            "required": true,
+            "dataSourceStatement": "kt_land.`waarde_[lang_map]`",
+             "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity":"eindverbuiker"
         },
         "nuts2_code": {
             "types": {
@@ -101,7 +215,8 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`provincie`"
         },
         "nuts2_[lang]": {
             "types": {
@@ -116,7 +231,23 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "kt_provincie.`waarde_[lang_map]`",
+            "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity":"eindverbuiker"
         },
         "nuts3": {
             "types": {
@@ -126,7 +257,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`gemeente`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "place": {
             "types": {
@@ -138,7 +271,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": true
+            "required": true,
+            "dataSourceStatement": "UCASE(TRIM(ev.`b_woonplaats`))",
+            "dataSourceEntity":"eindverbuiker"
         },
         "area": {
             "types": {
@@ -148,7 +283,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`b_wijk`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "street": {
             "types": {
@@ -160,16 +297,19 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`b_adres`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "house_number": {
             "types": {
-                "_": "string",
-                "suggest": "text_general_splitting"
+                "_": "string"
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`b_huisnr`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "postal_code": {
             "types": {
@@ -178,7 +318,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`b_postcode`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "address_line2": {
             "types": {
@@ -188,7 +330,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`b_adres2`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "house_name": {
             "types": {
@@ -198,7 +342,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`b_huisnaam`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "address_simple": {
             "types": {
@@ -210,16 +356,19 @@
             },
             "indexed": true,
             "stored": false,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "CONCAT_WS(' ',ev.`b_adres`, ev.`b_huisnr`, ev.`b_postcode`, ev.`b_woonplaats`, ev.`land`)",
+            "dataSourceEntity":"eindverbuiker"
         },
-
         "latitude": {
             "types": {
                 "_": "double"
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "(CASE WHEN ev.`b_accuracy` >= 7 AND ev.`b_latitude` > 0 THEN ev.`b_latitude` ELSE NULL END)",
+            "dataSourceEntity":"eindverbuiker"
         },
         "longitude": {
             "types": {
@@ -227,7 +376,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "(CASE WHEN ev.`b_accuracy` >= 7 AND ev.`b_latitude` > 0 THEN ev.`b_longitude` ELSE NULL END)",
+            "dataSourceEntity":"eindverbuiker"
         },
         "latitude_longitude": {
             "types": {
@@ -236,7 +387,9 @@
             "indexed": true,
             "stored": true,
             "required": false,
-            "multiValued": true
+            "multiValued": true,
+            "dataSourceStatement": "(CASE WHEN ev.`b_accuracy` >= 7 AND ev.`b_latitude` > 0 THEN COALESCE(CONCAT_WS(',',ev.`b_latitude`,ev.`b_longitude`), NULL) ELSE NULL END)",
+            "dataSourceEntity":"eindverbuiker"
         },
 
         "phone_number": {
@@ -245,7 +398,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`telefoon`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "email_address": {
             "types": {
@@ -253,7 +408,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`email`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "website": {
             "types": {
@@ -261,7 +418,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`url`",
+            "dataSourceEntity":"eindverbuiker"
         },
 
         "enterprise_number": {
@@ -270,7 +429,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`kvk_pri`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "establishment_number": {
             "types": {
@@ -278,39 +439,43 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`kvk_sec`",
+            "dataSourceEntity":"eindverbuiker"
         },
-        "chain_type": {
+        "is_chain": {
             "types": {
-                "_": "string"
+                "_": "boolean"
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "IF(LENGTH(ev.`moeder`)=0 OR kt_moeder.`waarde_english`='Independent', 0,1)",
+            "dataSourceEntity":"eindverbuiker"
         },
-        "chain_[lang]": {
+        "chain": {
             "types": {
                 "_": "string",
-                "suggest": "text_[lang]_splitting",
+                "suggest": "text_general_splitting",
                 "edge": "autocomplete_edge",
                 "ngram": "autocomplete_ngram",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
-                "lang": "language_codes"
-            },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "kt_moeder.`waarde_english`",
+            "dataSourceEntity":"eindverbuiker"
         },
-
         "segment_code": {
             "types": {
                 "_": "string"
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`scode`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "segment_[lang]": {
             "types": {
@@ -325,7 +490,23 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "kt_scode.`waarde_[lang_map]`",
+             "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity":"eindverbuiker"
         },
         "sub_segment_code": {
             "types": {
@@ -333,7 +514,9 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "ev.`bcode`",
+            "dataSourceEntity":"eindverbuiker"
         },
         "sub_segment_[lang]": {
             "types": {
@@ -348,7 +531,23 @@
             },
             "indexed": true,
             "stored": true,
-            "required": false
+            "required": false,
+            "dataSourceStatement": "kt_bcode.`waarde_[lang_map]`",
+             "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity":"eindverbuiker"
         },
         "activity_type_code": {
             "types": {
@@ -357,7 +556,9 @@
             "indexed": true,
             "stored": true,
             "required": false,
-            "multiValued": true
+            "multiValued": true,
+            "dataSourceStatement": "GROUP_CONCAT(DISTINCT LEFT(kt_type.`code`, 6) SEPARATOR '⁞')",
+            "dataSourceEntity": "eindverbuiker_features"
         },
         "activity_type_[lang]": {
             "types": {
@@ -373,10 +574,25 @@
             "indexed": true,
             "stored": true,
             "required": false,
-            "multiValued": true
+            "multiValued": true,
+            "dataSourceStatement": "GROUP_CONCAT(DISTINCT kt_type.waarde_[lang_map] SEPARATOR '⁞')",
+             "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity": "eindverbuiker_features"
         },
-
-        "tags_[lang]": {
+        "location_tags_[lang]": {
             "types": {
                 "_": "tag_path",
                 "ancestor": "tag_path_ancestor",
@@ -389,9 +605,25 @@
             "indexed": true,
             "stored": true,
             "required": false,
-            "multiValued": true
+            "multiValued": true,
+            "dataSourceStatement": "CONCAT_WS('⁞', kt01.waarde_[lang_map], kt03.waarde_[lang_map], kt04.waarde_[lang_map], kt05.waarde_[lang_map], kt06.waarde_[lang_map], kt07.waarde_[lang_map], kt41.waarde_[lang_map], kt43.waarde_[lang_map], kt95.waarde_[lang_map], GROUP_CONCAT(DISTINCT kt11.waarde_[lang_map] SEPARATOR '⁞'))",
+             "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity": "eindverbuiker_features"
         },
-        "sub_tags_[lang]": {
+        "location_sub_tags_[lang]": {
             "types": {
                 "_": "tag_path",
                 "ancestor": "tag_path_ancestor",
@@ -404,7 +636,33 @@
             "indexed": true,
             "stored": true,
             "required": false,
-            "multiValued": true
+            "multiValued": true,
+            "dataSourceStatement": "CONCAT_WS('⁞', kt09.waarde_[lang_map], kt71.waarde_[lang_map], kt92.waarde_[lang_map], GROUP_CONCAT(DISTINCT kt96.waarde_[lang_map] SEPARATOR '⁞'),  GROUP_CONCAT(DISTINCT kt97.waarde_[lang_map] SEPARATOR '⁞'))",
+             "dataSourceStatementDependencyMapping":{
+                "lang":{
+                    "en": "english",
+                    "nl": "dutch",
+                    "de": "deutsch",
+                    "fr": "french",
+                    "es": "spanish",
+                    "it": "italian",
+                    "cz": "czech",
+                    "pl": "polish",
+                    "pt": "portuguese",
+                    "hu": "hungarian"
+                }
+            },
+            "dataSourceEntity": "eindverbuiker_features"
+        },
+        "street_ranking":{
+            "types": {
+                "_": "string"
+            },
+            "indexed": true,
+            "stored": true,
+            "required": false,
+            "dataSourceStatement": "evs.`street_ranking`",
+            "dataSourceEntity":"surrounding"
         }
 
     },
@@ -950,7 +1208,7 @@
                     "tokenizer": [
                         {
                             "class": "solr.PathHierarchyTokenizerFactory",
-                            "delimiter": "/"
+                            "delimiter": "⁄"
                         }
                     ],
                     "filter": []
@@ -985,7 +1243,7 @@
                     "tokenizer": [
                         {
                             "class": "solr.PathHierarchyTokenizerFactory",
-                            "delimiter": "/"
+                            "delimiter": "⁄"
                         }
                     ],
                     "filter": [

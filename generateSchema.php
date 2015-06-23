@@ -13,7 +13,7 @@ include_once('utils.php');
 $config = json_decode(file_get_contents("config/config.json"), true);
 
 if(json_last_error()){
-    "json decode error: " . json_last_error_msg();
+    print "json decode error: " . json_last_error_msg();
     exit();
 }
 
@@ -26,54 +26,35 @@ $schema = $schemaDoc->createElement('schema');
 // parse config
 if(isset($config['name'])){
     $schema->setAttribute('name', $config['name']);
-    unset($config['name']);
 }
 
 if(isset($config['solrSchemaVersion'])){
     $schema->setAttribute('version', $config['solrSchemaVersion']);
-    unset($config['solrSchemaVersion']);
 }
 
 $fields = $config['fields'];
-unset($config['fields']);
+
 
 $fieldTypes = $config['fieldTypes'];
-unset($config['fieldTypes']);
 
-$customVariables = $config;
+$dependencyVariables = array();
+if(isset($config['dependencyVariables'])){
+    $dependencyVariables = $config['dependencyVariables'];
+}
 
 $foundTypes = array();
 $unusedTypes = array();
 
 // fields generation
 foreach($fields as $fieldName=>$fieldInfo){
-    $dependancyArray = array(array());
-    if(isset($fieldInfo['dependency'])){
-        $combinedArrays = array();
-        foreach($fieldInfo['dependency'] as $dependancyPlaceholder=>$dependancyVariable){
-            if($customVariables[$dependancyVariable]){
-                $combinedArrays[$dependancyPlaceholder] = $customVariables[$dependancyVariable];
-            }
-        }
-        $dependancyArray = arrayCartesian($combinedArrays);
-    }
+    $dependancyArray = createDependencyArray($fieldInfo, $dependencyVariables);
     createFieldConfig($schemaDoc, $schema, $fieldName, $fieldInfo,$dependancyArray);
 }
 
 // fieldTypes generation
 // fields generation
 foreach($fieldTypes as $fieldType=>$fieldTypeInfo){
-    $dependancyArray = array(array());
-    if(isset($fieldTypeInfo['dependency'])){
-        $combinedArrays = array();
-        foreach($fieldTypeInfo['dependency'] as $dependancyPlaceholder=>$dependancyVariable){
-            if($customVariables[$dependancyVariable]){
-                $combinedArrays[$dependancyPlaceholder] = $customVariables[$dependancyVariable];
-            }
-        }
-        $dependancyArray = arrayCartesian($combinedArrays);
-        unset($fieldTypeInfo['dependency']);
-    }
+    $dependancyArray = createDependencyArray($fieldTypeInfo, $dependencyVariables);
     createFieldTypeConfig($schemaDoc, $schema, $fieldType, $fieldTypeInfo,$dependancyArray);
 }
 
@@ -113,8 +94,9 @@ function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArra
                 $currentFieldName .= '_'.$fieldNamePostfix;
             }
 
-            $currentFieldName = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $currentFieldName);
-            $currentFieldType = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $fieldType);
+            $currentFieldName = dependencyParser($currentFieldName, $dependancyData);
+            $currentFieldType = dependencyParser($fieldType, $dependancyData);
+
 
             $foundTypes[$currentFieldType] = $currentFieldType;
             if($isSourceField){
@@ -194,7 +176,8 @@ function createFieldTypeConfig(&$doc, &$el, $fieldType,  $fieldTypeInfo, $depend
     global $unusedTypes;
 
     foreach($dependancyArray as $pos=>$dependancyData){
-        $currentFieldType = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $fieldType);
+        $currentFieldType = dependencyParser($fieldType, $dependancyData);
+
 
         if(isset($foundTypes[$currentFieldType])){
             unset($foundTypes[$currentFieldType]);

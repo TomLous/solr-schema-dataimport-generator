@@ -6,173 +6,202 @@
  * Datetime:     16/06/15 11:25
  */
 
-print PHP_EOL."------------------------------------".PHP_EOL."Generating dataimport.xml".PHP_EOL;
+print PHP_EOL . "------------------------------------" . PHP_EOL . "Generating dataimport.xml" . PHP_EOL;
 include_once('utils.php');
 // Make sure to escape all slashes in Json eg"pattern": "([\.,;:-_])", => "pattern": "([\\.,;:-_])",
 $config = json_decode(file_get_contents("config/config.json"), true);
 
-if(json_last_error()){
-    "json decode error: " . json_last_error_msg();
+if (json_last_error()) {
+    print "json decode error: " . json_last_error_msg();
     exit();
 }
 
-$dataimportDoc = new DOMDocument("1.0","UTF-8");
+$dataimportDoc = new DOMDocument("1.0", "UTF-8");
 $dataimportDoc->preserveWhiteSpace = true;
 $dataimportDoc->formatOutput = true;
 $dataConfig = $dataimportDoc->createElement('dataConfig');
 
-foreach($config['data_sources'] as $name=>$data){
+$mainDataSource = null;
+foreach ($config['dataSources'] as $name => $data) {
     $dataSource = $dataimportDoc->createElement('dataSource');
     $dataSource->setAttribute('name', $name);
-    foreach($data as $key=>$val){
+    if ($mainDataSource === null) {
+        $mainDataSource = $name;
+    }
+    foreach ($data as $key => $val) {
         $dataSource->setAttribute($key, $val);
     }
     $dataConfig->appendChild($dataSource);
 }
 
+$dependencyVariables = array();
+if (isset($config['dependencyVariables'])) {
+    $dependencyVariables = $config['dependencyVariables'];
+}
+
+$document = $dataimportDoc->createElement('document');
+
 
 $fields = $config['fields'];
-//unset($config['fields']);
+$entityQueries = $config['entityQueries'];
+$defaultMultivaluedDataSourceSplitBy = $config['defaultMultivaluedDataSourceSplitBy'];
+// fields generation
 
+createQueriesConfig($dataimportDoc, $document, $fields, $entityQueries, $dependencyVariables, $defaultMultivaluedDataSourceSplitBy);
+
+
+$dataSource->appendChild($document);
 
 
 // parsing XML creating readable dataimport.xml
 $dataimportDoc->appendChild($dataConfig);
 
 $xml = $dataimportDoc->saveXML();
-$xml = preg_replace("/\s+<!--NEWLINE-->/is","\n",$xml);
+$xml = preg_replace("/\s+<!--NEWLINE-->/is", "\n", $xml);
+$xml = preg_replace("/&#10;/is", "\n", $xml);
+$xml = preg_replace("/&#9;/is", "\t", $xml);
 print $xml;
 
 file_put_contents('target/dataimport.xml', $xml);
 
 
+function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVariables, $defaultSplitBy)
+{
+
+    // select
+    $selectFields = array();
+    $primaryKeys = array();
+    $importFields = array();
+    foreach ($fields as $fieldName => $fieldInfo) {
+        $dependancyArray = createDependencyArray($fieldInfo, $dependencyVariables);
+        foreach ($dependancyArray as $pos => $dependancyData) {
+//            $sourceFieldName = $fieldName;
+            $currentFieldName = dependencyParser($fieldName, $dependancyData);
+
+
+            if (isset($fieldInfo['dataSourceEntity'])) {
+
+                if (isset($fieldInfo['uniqueKey']) && $fieldInfo['uniqueKey']) {
+                    $primaryKeys[$fieldInfo['dataSourceEntity']] = $currentFieldName;
+                }
+
+                if (!isset($selectFields[$fieldInfo['dataSourceEntity']])) {
+                    $selectFields[$fieldInfo['dataSourceEntity']] = array();
+                    $importFields[$fieldInfo['dataSourceEntity']] = array();
+                }
+                $statement = isset($fieldInfo['dataSourceStatement']) ? $fieldInfo['dataSourceStatement'] : "`{$currentFieldName}`";
+
+                if (isset($fieldInfo['dataSourceStatementDependencyMapping'])) {
+                    $mapping = array();
+                    foreach ($dependancyData as $key => $val) {
+                        if (isset($fieldInfo['dataSourceStatementDependencyMapping'][$key]) && isset($fieldInfo['dataSourceStatementDependencyMapping'][$key][$val])) {
+                            $mapping[$key . '_map'] = $fieldInfo['dataSourceStatementDependencyMapping'][$key][$val];
+                        }
+                    }
+                    $statement = dependencyParser($statement, $mapping);
+
+                }
+
+
+                if (isset($fieldInfo['multiValued']) && $fieldInfo['multiValued']) {
+                    $statement .= " as `{$currentFieldName}_mult`";
+                } else {
+                    $statement .= " as `{$currentFieldName}`";
+                }
+                $selectFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = $statement;
+
+                if (isset($fieldInfo['multiValued']) && $fieldInfo['multiValued']) {
+                    $sep = isset($fieldInfo['dataSourceMultivaluedSeperator']) ? $fieldInfo['dataSourceMultivaluedSeperator'] : $defaultSplitBy;
+                    $importFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = array('column' => $currentFieldName, 'sourceColName' => $currentFieldName . '_mult', 'splitBy' => $sep);
+                } else {
+                    $importFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = array('column' => $currentFieldName, 'name' => $currentFieldName);
+                }
+
+            }
+
+
+        }
+    }
+
+
+
+    // from
+    $entitiesXML = array();
+    $tabs = str_repeat("\t", 20);
+    $tabs2 = str_repeat("\t", 19);
+    $tabs3 = str_repeat("\t", 18);
+    foreach ($entityQueries as $entityName => $queryInfo) {
+        $entity = $doc->createElement('entity');
+        $entity->setAttribute('name', $entityName);
+        if (isset($queryInfo['dataSource'])) {
+            $entity->setAttribute('dataSource', $queryInfo['dataSource']);
+        }
+        if (isset($queryInfo['transformers'])) {
+            $entity->setAttribute('transformers', implode(",", $queryInfo['transformers']));
+        }
+        if(isset($queryInfo['pk'])){
+            $entity->setAttribute('pk', $queryInfo['pk']);
+        }elseif(isset($primaryKeys[$entityName])){
+            $entity->setAttribute('pk', $primaryKeys[$entityName]);
+        }
+
+
+
+        foreach ($queryInfo['queries'] as $queryType => $queryTypeData) {
+            $query = "SELECT ";
+            $select = array();
+            if(isset($queryTypeData['fields'])){
+                foreach($queryTypeData['fields'] as $fieldName){
+                    $select[] = $selectFields[$entityName][$fieldName];
+                }
+            }else{
+                $select = $selectFields[$entityName];
+            }
+            $query .= "\n{$tabs}".implode(",\n{$tabs}", $select);
+
+            foreach($queryTypeData['tables'] as $tableGroup){
+                $query .= " \n{$tabs2}".implode(" \n{$tabs}",$queryInfo['tables'][$tableGroup]);
+            }
+            $query .= " \n{$tabs2}".$queryTypeData['filter'].";\n{$tabs3}";
+
+            $entity->setAttribute($queryType, $query);
+        }
+
+
+        $entitiesXML[$entityName] = array('element'=>$entity);
+        if(isset($queryInfo['parentEntity'])){
+            $entitiesXML[$entityName]['parent'] = $queryInfo['parentEntity'];
+        }
+
+
+
+    }
 
 
 
 
+    // fields
+
+    foreach($importFields as $entityName => $data){
+        $parentEl = $entitiesXML[$entityName]['element'];
+        foreach($data as $fieldName=>$attributes){
+            $field = $doc->createElement('field');
+            foreach($attributes as $attr=>$val){
+                $field->setAttribute($attr, $val);
+            }
+            $parentEl->appendChild($field);
+        }
 
 
+    }
 
-// methods
-//function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArray){
-//    global $foundTypes;
-//    foreach($dependancyArray as $pos=>$dependancyData){
-//        $sourceFieldName = $fieldName;
-//
-//
-//        foreach($fieldInfo['types'] as $fieldNamePostfix=>$fieldType){
-//            $isSourceField = false;
-//            $currentFieldName = $fieldName;
-//            if($fieldNamePostfix == '_'){
-//                $isSourceField = true;
-//            }else{
-//                $currentFieldName .= '_'.$fieldNamePostfix;
-//            }
-//
-//            $currentFieldName = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $currentFieldName);
-//            $currentFieldType = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $fieldType);
-//
-//            $foundTypes[$currentFieldType] = $currentFieldType;
-//            if($isSourceField){
-//                $sourceFieldName = $currentFieldName;
-//                $comment = new DOMComment(" $currentFieldName ");
-//                $el->appendChild($comment);
-//            }
-//
-//            $indexed = isset($fieldInfo['indexed'])?$fieldInfo['indexed']:true;
-//            $stored = isset($fieldInfo['stored'])&& $isSourceField?$fieldInfo['stored']:false;
-//            $required = isset($fieldInfo['required'])&& $isSourceField?$fieldInfo['required']:false;
-//            $multiValued = isset($fieldInfo['multiValued'])?$fieldInfo['multiValued']:null;
-//
-//
-//            $field = $doc->createElement('field');
-//            $field->setAttribute("name", $currentFieldName);
-//            $field->setAttribute('type', $currentFieldType);
-//            $field->setAttribute('indexed', $indexed?'true':'false');
-//            $field->setAttribute('stored', $stored?'true':'false');
-//            $field->setAttribute('required', $required?'true':'false');
-//            if($multiValued !== null){
-//                $field->setAttribute('multiValued', $multiValued?'true':'false');
-//            }
-//            $el->appendChild($field);
-//            if(!$isSourceField){
-//                $field = $doc->createElement('copyField');
-//                $field->setAttribute('source', $sourceFieldName);
-//                $field->setAttribute('dest', $currentFieldName);
-//                $el->appendChild($field);
-//
-//            }
-//
-//        }
-//        $comment = new DOMComment("NEWLINE");
-//        $el->appendChild($comment);
-//
-//        if(isset($fieldInfo['uniqueKey'])){
-//            $field = $doc->createElement('uniqueKey', $sourceFieldName);
-//            $el->appendChild($field);
-//            $comment = new DOMComment("NEWLINE");
-//            $el->appendChild($comment);
-//        }
-//        if(isset($fieldInfo['defaultSearchField'])){
-//            $field = $doc->createElement('defaultSearchField', $sourceFieldName);
-//            $el->appendChild($field);
-//            $comment = new DOMComment("NEWLINE");
-//            $el->appendChild($comment);
-//        }
-//    }
-//}
-//
-//function createFieldTypeConfig(&$doc, &$el, $fieldType,  $fieldTypeInfo, $dependancyArray){
-//    global $foundTypes;
-//
-//    foreach($dependancyArray as $pos=>$dependancyData){
-//        $currentFieldType = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $fieldType);
-//
-//        $comment = new DOMComment(" $currentFieldType ");
-//        $el->appendChild($comment);
-//
-//        $field = $doc->createElement('fieldType');
-//
-//        jsonToXML($doc, $field, $fieldTypeInfo, $dependancyData);
-//        $el->appendChild($field);
-//        $comment = new DOMComment("NEWLINE");
-//        $el->appendChild($comment);
-//
-//    }
-//
-//}
-//
-//function jsonToXML(&$doc, &$el, $data, $dependancyData){
-//    foreach($data as $key=>$val){
-//        $key = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $key);
-//
-//        if(is_scalar($val)){
-//            if($val === true){
-//                $val = 'true';
-//            }elseif($val === false){
-//                $val = 'false';
-//            }
-//
-//
-//            if($key != 'pattern'){
-//                $val = preg_replace('/\[([^\]]+)\]/ies', "\$dependancyData['\\1'];", $val);
-//            }
-//
-//            if($val !== null){
-//                $el->setAttribute($key, $val);
-//            }
-//        }elseif(is_array($val)){
-//            foreach($val as $subval){
-//                $subel = $doc->createElement($key);
-//                jsonToXML($doc, $subel, $subval, $dependancyData);
-//                $el->appendChild($subel);
-//            }
-//        }else{
-//            $subel = $doc->createElement($key);
-//            jsonToXML($doc, $subel, $val, $dependancyData);
-//            $el->appendChild($subel);
-//        }
-//
-//    }
-//}
+    foreach($entitiesXML as $entityName=>$entityData){
+        if(!isset($entityData['parent'])){
+            $el->appendChild($entityData['element']);
+        }else{
+            $entitiesXML[$entityData['parent']]['element']->appendChild($entityData['element']);
+        }
+    }
 
+
+}
