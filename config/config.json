@@ -1,39 +1,38 @@
 {
     "name": "outlets",
     "solrSchemaVersion": "1.5",
-    "dependencyVariables":{
+    "dependencyVariables": {
         "language_codes": ["en", "nl", "de", "fr", "es", "it", "pl"]
     },
-    "defaultMultivaluedDataSourceSplitBy": "⁞",
-    "dataSources":{
-        "global":{
+    "dataSources": {
+        "global": {
             "type": "JdbcDataSource",
             "driver": "com.mysql.jdbc.Driver",
-            "url": "jdbc:mysql://[hostname1]/[database1]",
-            "user": "[user1]",
-            "password": "[password1]",
+            "url": "jdbc:mysql://datawarehouse.datlinq.com/outlet_public_global",
+            "user": "solr",
+            "password": "S0LRd4T4",
             "batchSize": -1
         },
-        "datawarehouse":{
+        "datawarehouse": {
             "type": "JdbcDataSource",
             "driver": "com.mysql.jdbc.Driver",
-            "url": "jdbc:mysql://[hostname2]/[database2]",
-            "user": "[user2]",
-            "password": "[password2]",
+            "url": "jdbc:mysql://datawarehouse.datlinq.com/outlet_public_global",
+            "user": "solr",
+            "password": "S0LRd4T4",
             "batchSize": -1
         }
     },
-    "entityQueries":{
-        "eindverbuiker":{
+    "entityQueries": {
+        "eindverbruiker": {
             "dataSource": "global",
             "transformers": ["RegexTransformer"],
             "tables": {
                 "main": ["FROM `eindverbruiker` ev"],
                 "all": ["LEFT JOIN `kenmerken_taal` kt_land ON ev.`land`=kt_land.`code` AND kt_land.`tabel`='land'",
-                        "LEFT JOIN `kenmerken_taal` kt_provincie ON ev.`provincie`=kt_provincie.`code` AND kt_provincie.`tabel`='provincie'",
-                        "LEFT JOIN `kenmerken_taal` kt_moeder ON ev.`scode`=kt_moeder.`code` AND kt_moeder.`tabel`='moeder'",
-                        "LEFT JOIN `kenmerken_taal` kt_scode ON ev.`scode`=kt_scode.`code` AND kt_scode.`tabel`='scode'",
-                        "LEFT JOIN `kenmerken_taal` kt_bcode ON ev.`bcode`=kt_bcode.`code` AND kt_bcode.`tabel`='bcode'"
+                    "LEFT JOIN `kenmerken_taal` kt_provincie ON ev.`provincie`=kt_provincie.`code` AND kt_provincie.`tabel`='provincie'",
+                    "LEFT JOIN `kenmerken_taal` kt_moeder ON ev.`scode`=kt_moeder.`code` AND kt_moeder.`tabel`='moeder'",
+                    "LEFT JOIN `kenmerken_taal` kt_scode ON ev.`scode`=kt_scode.`code` AND kt_scode.`tabel`='scode'",
+                    "LEFT JOIN `kenmerken_taal` kt_bcode ON ev.`bcode`=kt_bcode.`code` AND kt_bcode.`tabel`='bcode'"
                 ]
             },
             "queries": {
@@ -46,16 +45,16 @@
                     "tables": ["main", "all"]
                 },
                 "deltaQuery": {
-                    "filter": "WHERE ev.`updatedon` &gt; '${dih.last_index_time}'",
+                    "filter": "WHERE ev.`updatedon` > '${dih.last_index_time}'",
                     "tables": ["main"],
                     "fields": ["id"]
                 }
             }
         },
-        "eindverbuiker_features":{
+        "eindverbruiker_features": {
             "dataSource": "global",
             "transformers": ["RegexTransformer"],
-            "parentEntity": "eindverbuiker",
+            "parentEntity": "eindverbruiker",
             "pk": "klantnr",
             "tables": {
                 "main": ["FROM `eindverbruiker` ev"],
@@ -79,24 +78,61 @@
             },
             "queries": {
                 "query": {
-                    "filter": "WHERE ev.`klantnr`= '${eindverbuiker.klantnr}'",
+                    "filter": "WHERE ev.`klantnr`= '${eindverbruiker.id}'",
                     "tables": ["main", "all"]
                 }
             }
         },
-        "surrounding":{
+        "surrounding400": {
             "dataSource": "datawarehouse",
-            "parentEntity": "eindverbuiker",
+            "parentEntity": "eindverbruiker",
             "pk": "klantnr",
             "tables": {
                 "main": ["FROM `ev_surrounding` evs"]
             },
-            "queries":{
+            "queries": {
                 "query": {
-                    "filter": "WHERE evs.`klantnr`= '${eindverbuiker.klantnr}' AND evs.`radius` = '0.4'",
+                    "filter": "WHERE evs.`klantnr`= '${eindverbruiker.id}' AND evs.`radius` = '0.4'",
                     "tables": ["main"]
                 }
             }
+        }
+    },
+    "searchOptions":{
+        "search":{
+            "type": "EDisMax",
+            "facets": true,
+            "options":{
+                "lowercaseOperators": true,
+                "stopwords": true,
+                "indent": true,
+                "stats": true
+            },
+            "minimumMatch": "2<-1 5<80%",
+            "queryPhraseSlop": 2,
+            "phraseSlop": 2,
+            "phraseBiGramSlop": 2,
+            "phraseTriGramSlop": 2
+        },
+        "autocomplete":{
+            "type": "EDisMax",
+            "facets": false,
+            "options":{
+                "lowercaseOperators": true,
+                "stopwords": true,
+                "indent": true
+            },
+            "minimumMatch": "2<-1 5<80%"
+        },
+        "location":{
+            "type": "EDisMax",
+            "facets": false,
+            "options":{
+                "lowercaseOperators": true,
+                "stopwords": true,
+                "indent": true
+            },
+            "minimumMatch": "2<-1 5<80%"
         }
     },
     "fields": {
@@ -106,8 +142,7 @@
                 "_": "long"
             },
             "indexed": true,
-            "stored": true,
-            "required": true
+            "stored": true
         },
         "_root_": {
             "_comment": "Points to the root document of a block of nested documents. Required for nested document support, may be removed otherwise",
@@ -115,8 +150,7 @@
                 "_": "string"
             },
             "indexed": true,
-            "stored": false,
-            "required": true
+            "stored": false
         },
 
         "id": {
@@ -129,8 +163,18 @@
             "stored": true,
             "required": true,
             "dataSourceStatement": "ev.`klantnr`",
-            "dataSourceEntity":"eindverbuiker"
-
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "autocomplete", "location"],
+                "facet": false,
+                "boost": 70,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "dataoutlet_status": {
             "types": {
@@ -140,7 +184,18 @@
             "stored": true,
             "required": true,
             "dataSourceStatement": "ev.`status`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": false,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 0,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "updatedon": {
             "types": {
@@ -150,7 +205,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "DATE_FORMAT(ev.`updatedon`,'%Y-%m-%dT%TZ')",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": false,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 0,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
 
         "name": {
@@ -166,7 +232,18 @@
             "stored": true,
             "required": true,
             "dataSourceStatement": "ev.`naam`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "autocomplete", "location"],
+                "facet": false,
+                "boost": 100,
+                "fuzzy": 4,
+                "phraseField": 4,
+                "phraseFieldBiGram": 3,
+                "phraseFieldTriGram": 2
+            }
         },
         "country_code": {
             "types": {
@@ -176,7 +253,18 @@
             "stored": true,
             "required": true,
             "dataSourceStatement": "ev.`land`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 5,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "country_[lang]": {
             "types": {
@@ -186,15 +274,15 @@
                 "ngram": "autocomplete_ngram",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
             "stored": true,
             "required": true,
             "dataSourceStatement": "kt_land.`waarde_[lang_map]`",
-             "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -207,7 +295,18 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 10,
+                "fuzzy": 1,
+                "phraseField": 2,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "nuts2_code": {
             "types": {
@@ -216,7 +315,19 @@
             "indexed": true,
             "stored": true,
             "required": false,
-            "dataSourceStatement": "ev.`provincie`"
+            "dataSourceStatement": "ev.`provincie`",
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 8,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "nuts2_[lang]": {
             "types": {
@@ -226,15 +337,15 @@
                 "ngram": "autocomplete_ngram",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
             "stored": true,
             "required": false,
             "dataSourceStatement": "kt_provincie.`waarde_[lang_map]`",
-            "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -247,7 +358,18 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 10,
+                "fuzzy": 2,
+                "phraseField": 3,
+                "phraseFieldBiGram": 2,
+                "phraseFieldTriGram": false
+            }
         },
         "nuts3": {
             "types": {
@@ -259,7 +381,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`gemeente`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 15,
+                "fuzzy": false,
+                "phraseField": 2,
+                "phraseFieldBiGram": 1,
+                "phraseFieldTriGram": false
+            }
         },
         "place": {
             "types": {
@@ -273,7 +406,18 @@
             "stored": true,
             "required": true,
             "dataSourceStatement": "UCASE(TRIM(ev.`b_woonplaats`))",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 40,
+                "fuzzy": 3,
+                "phraseField": 2,
+                "phraseFieldBiGram": 2,
+                "phraseFieldTriGram": 1
+            }
         },
         "area": {
             "types": {
@@ -285,7 +429,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`b_wijk`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "autocomplete", "location"],
+                "facet": false,
+                "boost": 10,
+                "fuzzy": 2,
+                "phraseField": 3,
+                "phraseFieldBiGram": 2,
+                "phraseFieldTriGram": 1
+            }
         },
         "street": {
             "types": {
@@ -299,17 +454,40 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`b_adres`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 30,
+                "fuzzy": 3,
+                "phraseField": 3,
+                "phraseFieldBiGram": 2,
+                "phraseFieldTriGram": 1
+            }
         },
         "house_number": {
             "types": {
-                "_": "string"
+                "_": "string",
+                "suggest": "text_general_splitting"
             },
             "indexed": true,
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`b_huisnr`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 1,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "postal_code": {
             "types": {
@@ -320,7 +498,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`b_postcode`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 50,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "address_line2": {
             "types": {
@@ -332,7 +521,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`b_adres2`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 2,
+                "fuzzy": false,
+                "phraseField": 1,
+                "phraseFieldBiGram": 1,
+                "phraseFieldTriGram": false
+            }
         },
         "house_name": {
             "types": {
@@ -344,7 +544,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`b_huisnaam`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "autocomplete", "location"],
+                "facet": false,
+                "boost": 1,
+                "fuzzy": 1,
+                "phraseField": 1,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "address_simple": {
             "types": {
@@ -358,7 +569,18 @@
             "stored": false,
             "required": false,
             "dataSourceStatement": "CONCAT_WS(' ',ev.`b_adres`, ev.`b_huisnr`, ev.`b_postcode`, ev.`b_woonplaats`, ev.`land`)",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "autocomplete"],
+                "facet": false,
+                "boost": 70,
+                "fuzzy": 3,
+                "phraseField": 3,
+                "phraseFieldBiGram": 3,
+                "phraseFieldTriGram": 3
+            }
         },
         "latitude": {
             "types": {
@@ -368,7 +590,19 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "(CASE WHEN ev.`b_accuracy` >= 7 AND ev.`b_latitude` > 0 THEN ev.`b_latitude` ELSE NULL END)",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "location"],
+                "facet": false,
+                "boost": 1,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false,
+                "additional": ["stats.field"]
+            }
         },
         "longitude": {
             "types": {
@@ -378,7 +612,19 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "(CASE WHEN ev.`b_accuracy` >= 7 AND ev.`b_latitude` > 0 THEN ev.`b_longitude` ELSE NULL END)",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "location"],
+                "facet": false,
+                "boost": 1,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false,
+                "additional": ["stats.field"]
+            }
         },
         "latitude_longitude": {
             "types": {
@@ -389,7 +635,18 @@
             "required": false,
             "multiValued": true,
             "dataSourceStatement": "(CASE WHEN ev.`b_accuracy` >= 7 AND ev.`b_latitude` > 0 THEN COALESCE(CONCAT_WS(',',ev.`b_latitude`,ev.`b_longitude`), NULL) ELSE NULL END)",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search", "location"],
+                "facet": false,
+                "boost": 1,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
 
         "phone_number": {
@@ -400,27 +657,62 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`telefoon`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 7,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "email_address": {
             "types": {
-                "_": "text_url_email"
+                "_": "text_url_email",
+                "suggest": "text_general_splitting"
             },
             "indexed": true,
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`email`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 7,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "website": {
             "types": {
-                "_": "text_url_email"
+                "_": "text_url_email",
+                "suggest": "text_general_splitting"
             },
             "indexed": true,
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`url`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 7,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
 
         "enterprise_number": {
@@ -431,7 +723,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`kvk_pri`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 8,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "establishment_number": {
             "types": {
@@ -441,7 +744,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`kvk_sec`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 10,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "is_chain": {
             "types": {
@@ -451,7 +765,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "IF(LENGTH(ev.`moeder`)=0 OR kt_moeder.`waarde_english`='Independent', 0,1)",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": false,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 0,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "chain": {
             "types": {
@@ -465,7 +790,18 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "kt_moeder.`waarde_english`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 5,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         },
         "segment_code": {
             "types": {
@@ -475,7 +811,7 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`scode`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker"
         },
         "segment_[lang]": {
             "types": {
@@ -485,15 +821,15 @@
                 "ngram": "autocomplete_ngram",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
             "stored": true,
             "required": false,
             "dataSourceStatement": "kt_scode.`waarde_[lang_map]`",
-             "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -506,7 +842,18 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 20,
+                "fuzzy": 1,
+                "phraseField": 1,
+                "phraseFieldBiGram": 1,
+                "phraseFieldTriGram": 1
+            }
         },
         "sub_segment_code": {
             "types": {
@@ -516,7 +863,7 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "ev.`bcode`",
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker"
         },
         "sub_segment_[lang]": {
             "types": {
@@ -526,15 +873,15 @@
                 "ngram": "autocomplete_ngram",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
             "stored": true,
             "required": false,
             "dataSourceStatement": "kt_bcode.`waarde_[lang_map]`",
-             "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -547,7 +894,18 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity":"eindverbuiker"
+            "dataSourceEntity": "eindverbruiker",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 20,
+                "fuzzy": 1,
+                "phraseField": 1,
+                "phraseFieldBiGram": 1,
+                "phraseFieldTriGram": 1
+            }
         },
         "activity_type_code": {
             "types": {
@@ -558,7 +916,8 @@
             "required": false,
             "multiValued": true,
             "dataSourceStatement": "GROUP_CONCAT(DISTINCT LEFT(kt_type.`code`, 6) SEPARATOR '⁞')",
-            "dataSourceEntity": "eindverbuiker_features"
+            "dataSourceMultivaluedSeperator": "⁞",
+            "dataSourceEntity": "eindverbruiker_features"
         },
         "activity_type_[lang]": {
             "types": {
@@ -568,7 +927,7 @@
                 "ngram": "autocomplete_ngram",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
@@ -576,8 +935,9 @@
             "required": false,
             "multiValued": true,
             "dataSourceStatement": "GROUP_CONCAT(DISTINCT kt_type.waarde_[lang_map] SEPARATOR '⁞')",
-             "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceMultivaluedSeperator": "⁞",
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -590,7 +950,18 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity": "eindverbuiker_features"
+            "dataSourceEntity": "eindverbruiker_features",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 30,
+                "fuzzy": 1,
+                "phraseField": 1,
+                "phraseFieldBiGram": 1,
+                "phraseFieldTriGram": 1
+            }
         },
         "location_tags_[lang]": {
             "types": {
@@ -599,7 +970,7 @@
                 "search": "text_[lang]_splitting",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
@@ -607,8 +978,9 @@
             "required": false,
             "multiValued": true,
             "dataSourceStatement": "CONCAT_WS('⁞', kt01.waarde_[lang_map], kt03.waarde_[lang_map], kt04.waarde_[lang_map], kt05.waarde_[lang_map], kt06.waarde_[lang_map], kt07.waarde_[lang_map], kt41.waarde_[lang_map], kt43.waarde_[lang_map], kt95.waarde_[lang_map], GROUP_CONCAT(DISTINCT kt11.waarde_[lang_map] SEPARATOR '⁞'))",
-             "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceMultivaluedSeperator": "⁞",
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -621,7 +993,18 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity": "eindverbuiker_features"
+            "dataSourceEntity": "eindverbruiker_features",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 20,
+                "fuzzy": 3,
+                "phraseField": 3,
+                "phraseFieldBiGram": 3,
+                "phraseFieldTriGram": 3
+            }
         },
         "location_sub_tags_[lang]": {
             "types": {
@@ -630,7 +1013,7 @@
                 "search": "text_[lang]_splitting",
                 "reverse": "text_general_reversed"
             },
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "indexed": true,
@@ -638,8 +1021,9 @@
             "required": false,
             "multiValued": true,
             "dataSourceStatement": "CONCAT_WS('⁞', kt09.waarde_[lang_map], kt71.waarde_[lang_map], kt92.waarde_[lang_map], GROUP_CONCAT(DISTINCT kt96.waarde_[lang_map] SEPARATOR '⁞'),  GROUP_CONCAT(DISTINCT kt97.waarde_[lang_map] SEPARATOR '⁞'))",
-             "dataSourceStatementDependencyMapping":{
-                "lang":{
+            "dataSourceMultivaluedSeperator": "⁞",
+            "dataSourceStatementDependencyMapping": {
+                "lang": {
                     "en": "english",
                     "nl": "dutch",
                     "de": "deutsch",
@@ -652,9 +1036,20 @@
                     "hu": "hungarian"
                 }
             },
-            "dataSourceEntity": "eindverbuiker_features"
+            "dataSourceEntity": "eindverbruiker_features",
+            "searchOptions": {
+                "search": true,
+                "return": true,
+                "actions": ["search"],
+                "facet": true,
+                "boost": 15,
+                "fuzzy": 3,
+                "phraseField": 3,
+                "phraseFieldBiGram": 3,
+                "phraseFieldTriGram": 3
+            }
         },
-        "street_ranking":{
+        "street_ranking_400": {
             "types": {
                 "_": "string"
             },
@@ -662,7 +1057,60 @@
             "stored": true,
             "required": false,
             "dataSourceStatement": "evs.`street_ranking`",
-            "dataSourceEntity":"surrounding"
+            "dataSourceEntity": "surrounding400",
+            "searchOptions": {
+                "search": false,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 0,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
+        },
+        "competitors_400": {
+            "types": {
+                "_": "int"
+            },
+            "indexed": true,
+            "stored": true,
+            "required": false,
+            "dataSourceStatement": "evs.`competitors`",
+            "dataSourceEntity": "surrounding400",
+            "searchOptions": {
+                "search": false,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 0,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
+        },
+        "competitors_street_400": {
+            "types": {
+                "_": "int"
+            },
+            "indexed": true,
+            "stored": true,
+            "required": false,
+            "dataSourceStatement": "evs.`competitors_street`",
+            "dataSourceEntity": "surrounding400",
+            "searchOptions": {
+                "search": false,
+                "return": true,
+                "actions": ["search"],
+                "facet": false,
+                "boost": 0,
+                "fuzzy": false,
+                "phraseField": false,
+                "phraseFieldBiGram": false,
+                "phraseFieldTriGram": false
+            }
         }
 
     },
@@ -671,32 +1119,169 @@
             "class": "solr.StrField",
             "sortMissingLast": true
         },
-        "long": {
-            "class": "solr.TrieLongField",
-            "precisionStep": 0,
-            "positionIncrementGap": 0
+        "strings": {
+            "class": "solr.StrField",
+            "sortMissingLast": true,
+            "multiValued": true
+        },
+        "boolean": {
+            "class": "solr.BoolField",
+            "sortMissingLast": true,
+            "__searchPhraseField": false
+        },
+        "booleans": {
+            "class": "solr.BoolField",
+            "sortMissingLast": true,
+            "multiValued": true,
+            "__searchPhraseField": false
         },
         "int": {
             "class": "solr.TrieIntField",
             "precisionStep": 0,
-            "positionIncrementGap": 0
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "ints": {
+            "class": "solr.TrieIntField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "long": {
+            "class": "solr.TrieLongField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "longs": {
+            "class": "solr.TrieLongField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "float": {
+            "class": "solr.TrieFloatField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "floats": {
+            "class": "solr.TrieFloatField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
         },
         "double": {
             "class": "solr.TrieDoubleField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "doubles": {
+            "class": "solr.TrieDoubleField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "date": {
+            "class": "solr.TrieDateField",
             "precisionStep": 0,
-            "positionIncrementGap": 0
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "dates": {
+            "class": "solr.TrieDateField",
+            "precisionStep": 6,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "tint": {
+            "class": "solr.TrieIntField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "tints": {
+            "class": "solr.TrieIntField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "tlong": {
+            "class": "solr.TrieLongField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "tlongs": {
+            "class": "solr.TrieLongField",
+            "precisionStep": 0,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "tfloat": {
+            "class": "solr.TrieFloatField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "tfloats": {
+            "class": "solr.TrieFloatField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "tdouble": {
+            "class": "solr.TrieDoubleField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
+        },
+        "tdoubles": {
+            "class": "solr.TrieDoubleField",
+            "precisionStep": 8,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
         },
         "tdate": {
             "class": "solr.TrieDateField",
             "precisionStep": 6,
-            "positionIncrementGap": 0
+            "positionIncrementGap": 0,
+            "__searchPhraseField": false
         },
+        "tdates": {
+            "class": "solr.TrieDateField",
+            "precisionStep": 6,
+            "positionIncrementGap": 0,
+            "multiValued": true,
+            "__searchPhraseField": false
+        },
+        "binary": {
+            "class": "solr.BinaryField",
+            "__searchPhraseField": false
+        },
+        "random": {
+            "class": "solr.RandomSortField",
+            "indexed": true,
+            "__searchPhraseField": false
+        },
+
         "location_rpt": {
             "class": "solr.SpatialRecursivePrefixTreeFieldType",
             "geo": true,
             "distErrPct": 0.025,
             "maxDistErr": 0.001,
-            "distanceUnits": "kilometers"
+            "distanceUnits": "kilometers",
+            "__searchPhraseField": false
         },
         "text_general_splitting": {
             "class": "solr.TextField",
@@ -769,13 +1354,15 @@
                         }
                     ]
                 }
-            }
+            },
+            "__searchBoostFactor": 0.8,
+            "__searchFuzzyValue": false
         },
         "text_[lang]_splitting": {
             "class": "solr.TextField",
             "positionIncrementGap": 100,
             "autoGeneratePhraseQueries": true,
-            "dependency": {
+            "__dependency": {
                 "lang": "language_codes"
             },
             "analyzer": {
@@ -855,7 +1442,9 @@
                         }
                     ]
                 }
-            }
+            },
+            "__searchBoostFactor": 0.8,
+            "__searchFuzzyValue": false
         },
         "text_general_reversed": {
             "class": "solr.TextField",
@@ -928,7 +1517,9 @@
                         }
                     ]
                 }
-            }
+            },
+            "__searchBoostFactor": 0.2,
+            "__searchFuzzyFactor": 0.5
         },
         "autocomplete_edge": {
             "class": "solr.TextField",
@@ -1016,7 +1607,9 @@
                         }
                     ]
                 }
-            }
+            },
+            "__searchBoostFactor": 0.6,
+            "__searchFuzzyValue": false
         },
         "autocomplete_ngram": {
             "class": "solr.TextField",
@@ -1122,7 +1715,9 @@
                         }
                     ]
                 }
-            }
+            },
+            "__searchBoostFactor": 0.5,
+            "__searchFuzzyValue": false
         },
         "text_url_email": {
             "class": "solr.TextField",
