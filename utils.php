@@ -6,6 +6,8 @@
  * Datetime:     16/06/15 12:02
  */
 
+date_default_timezone_set('Europe/Amsterdam');
+
 function jsonToXML(&$doc, &$el, $data, $dependancyData){
     foreach($data as $key=>$val){
         $key = dependencyParser($key, $dependancyData);

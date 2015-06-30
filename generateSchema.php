@@ -20,6 +20,9 @@ if(json_last_error()){
 $schemaDoc = new DOMDocument("1.0","UTF-8");
 $schemaDoc->preserveWhiteSpace = true;
 $schemaDoc->formatOutput = true;
+
+$comment = new DOMComment("Generated ".date('Y-m-d')." with Solr Schema Generator (https://github.com/TomLous/solr-schema-dataimport-generator)");
+$schemaDoc->appendChild($comment);
 $schema = $schemaDoc->createElement('schema');
 
 
@@ -101,7 +104,11 @@ function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArra
             $foundTypes[$currentFieldType] = $currentFieldType;
             if($isSourceField){
                 $sourceFieldName = $currentFieldName;
-                $comment = new DOMComment(" $currentFieldName ");
+                $commentStr = " $currentFieldName ";
+                if(isset($fieldInfo['_comment'])){
+                    $commentStr .= " : ".$fieldInfo['_comment'];
+                }
+                $comment = new DOMComment($commentStr);
                 $el->appendChild($comment);
             }
 

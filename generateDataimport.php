@@ -20,6 +20,9 @@ $dataimportDoc = new DOMDocument("1.0", "UTF-8");
 $dataimportDoc->preserveWhiteSpace = true;
 $dataimportDoc->formatOutput = true;
 
+$comment = new DOMComment("Generated ".date('Y-m-d')." with Solr Dataimport Generator (https://github.com/TomLous/solr-schema-dataimport-generator)");
+$dataimportDoc->appendChild($comment);
+
 $dataConfig = $dataimportDoc->createElement('dataConfig');
 
 

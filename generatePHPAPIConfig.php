@@ -25,6 +25,8 @@ $fields = $config['fields'];
 
 $apiConfig = $config['searchOptions'];
 
+
+
 //$fieldTypes = $config['fieldTypes'];
 
 foreach($apiConfig as $action => $data ){
@@ -50,6 +52,7 @@ foreach($apiConfig as $action => $data ){
     $apiConfig[$action]['dependencies']  = array_values($apiConfig[$action]['dependencies']);
 }
 
+$apiConfig['__meta']=array('comment'=>"Generated ".date('Y-m-d')." with Solr Schema Generator (https://github.com/TomLous/solr-schema-dataimport-generator)");
 file_put_contents('target/apiconfig.json', jsonFormat($apiConfig));
 
 // methods
