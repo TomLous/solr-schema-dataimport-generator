@@ -1,0 +1,815 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<style>
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote {
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: "Helvetica Neue", Helvetica, "Hiragino Sans GB", Arial, sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    color: #737373;
+    background-color: white;
+    margin: 10px 13px 10px 13px;
+}
+table {
+	margin: 10px 0 15px 0;
+	border-collapse: collapse;
+}
+td,th {	
+	border: 1px solid #ddd;
+	padding: 3px 10px;
+}
+th {
+	padding: 5px 10px;	
+}
+
+a {
+    color: #0069d6;
+}
+a:hover {
+    color: #0050a3;
+    text-decoration: none;
+}
+a img {
+    border: none;
+}
+p {
+    margin-bottom: 9px;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #404040;
+    line-height: 36px;
+}
+h1 {
+    margin-bottom: 18px;
+    font-size: 30px;
+}
+h2 {
+    font-size: 24px;
+}
+h3 {
+    font-size: 18px;
+}
+h4 {
+    font-size: 16px;
+}
+h5 {
+    font-size: 14px;
+}
+h6 {
+    font-size: 13px;
+}
+hr {
+    margin: 0 0 19px;
+    border: 0;
+    border-bottom: 1px solid #ccc;
+}
+blockquote {
+    padding: 13px 13px 21px 15px;
+    margin-bottom: 18px;
+    font-family:georgia,serif;
+    font-style: italic;
+}
+blockquote:before {
+    content:"\201C";
+    font-size:40px;
+    margin-left:-10px;
+    font-family:georgia,serif;
+    color:#eee;
+}
+blockquote p {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 18px;
+    margin-bottom: 0;
+    font-style: italic;
+}
+code, pre {
+    font-family: Monaco, Andale Mono, Courier New, monospace;
+}
+code {
+    background-color: #fee9cc;
+    color: rgba(0, 0, 0, 0.75);
+    padding: 1px 3px;
+    font-size: 12px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+pre {
+    display: block;
+    padding: 14px;
+    margin: 0 0 18px;
+    line-height: 16px;
+    font-size: 11px;
+    border: 1px solid #d9d9d9;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+pre code {
+    background-color: #fff;
+    color:#737373;
+    font-size: 11px;
+    padding: 0;
+}
+sup {
+    font-size: 0.83em;
+    vertical-align: super;
+    line-height: 0;
+}
+* {
+	-webkit-print-color-adjust: exact;
+}
+@media screen and (min-width: 914px) {
+    body {
+        width: 854px;
+        margin:10px auto;
+    }
+}
+@media print {
+	body,code,pre code,h1,h2,h3,h4,h5,h6 {
+		color: black;
+	}
+	table, pre {
+		page-break-inside: avoid;
+	}
+}
+</style>
+<title>Solr Config Generator</title>
+
+</head>
+<body>
+<h1>Solr Config Generator</h1>
+
+<p>These php scripts generate 3 config files</p>
+
+<ul>
+<li><strong>generateSchema.php</strong> => schema.xml <a href="https://wiki.apache.org/solr/SchemaXml">see</a></li>
+<li><strong>generateDataimport.php</strong> => dataimport-config.xml <a href="https://wiki.apache.org/solr/DataImportHandler">see</a></li>
+<li><strong>generatePHPAPIConfig.php</strong> => apiconfig.json (custom format)</li>
+</ul>
+
+
+<p>based on 1 central <a href="config/config.default.json">config.json</a> for use in Solr Core &amp; API</p>
+
+<hr />
+
+<h2>Table of Contents</h2>
+
+<ul>
+<li><a href="#config">config.json</a>
+
+<ul>
+<li><a href="#configfields">fields</a>
+
+<ul>
+<li><a href="#configfieldsearchoptions">searchOptions</a></li>
+</ul>
+</li>
+<li><a href="#configfieldtypes">fieldTypes</a></li>
+<li><a href="#configdatasources">dataSources</a></li>
+<li><a href="#configentityqueries">entityQueries</a></li>
+<li><a href="#configsearchoptions">searchOptions</a></li>
+<li><a href="#configdependencyvariables">dependencyVariables</a></li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<h2><a name="config"></a>config.json</h2>
+
+<ol>
+<li>Copy the <a href="config/config.default.json">config/config.default.json</a> to <a href="config/config.json">config/config.json</a> or create new json</li>
+</ol>
+
+
+<p>The config.json consits of several required properties:</p>
+
+<ul>
+<li><strong>name</strong> : The name of the schema (not very important, but should be equivilent to the solr core name)</li>
+<li><strong>solrSchemaVersion</strong> : This should be equivilent to the current used schema <a href="https://wiki.apache.org/solr/SchemaXml#Schema_version_attribute_in_the_root_node">doc</a>, currently <strong>1.5</strong></li>
+<li><strong>fields</strong> : fields in core, <a href="#configfields">detailed config</a></li>
+<li><strong>fieldTypes</strong> : field types in core, <a href="#configfieldtypes">detailed config</a></li>
+<li><strong>dataSources</strong> : datasources for data-import, <a href="#configdatasources">detailed config</a></li>
+<li><strong>entityQueries</strong> : entity definition &amp; SQL query generator syntax, <a href="#configentityqueries">detailed config</a></li>
+<li><strong>searchOptions</strong> : search options per search action type, <a href="#configsearchoptions">detailed config</a></li>
+<li><strong>dependencyVariables</strong> : dependacy field, for generating &amp; queries, <a href="#configdependencyvariables">detailed config</a></li>
+</ul>
+
+
+<pre><code>{
+    name: "outlets",
+    solrSchemaVersion: "1.5",
+    dependencyVariables: {...},
+    dataSources: {...},
+    entityQueries: {...},
+    searchOptions: {...},
+    fields: {...},
+    fieldTypes: {...}
+}
+</code></pre>
+
+<hr />
+
+<h4><a name="configfields"></a>fields</h4>
+
+<p><strong>fields</strong> consists of a list of fieldnames with a config object encapsulated.
+All parts of the config can be templated for [dependancyVariables]</p>
+
+<p>Properties of a specific set of properties</p>
+
+<p><strong><em>required</em></strong>:</p>
+
+<ul>
+<li><strong>dataSourceEntity</strong> : The name of the entity this field belongs to. <a href="#configentityqueries">see</a></li>
+<li><strong>dataSourceStatement</strong> : The SELECT part of the SQL-query for this field. Can be a complext statement or just a fieldname (don't forget the table prefix for ambiguity)</li>
+<li><strong>types</strong> : An array of fieldTypes for this field.
+
+<ul>
+<li>The fieldname is postfixed ([fieldname]_[key]) for each field type. The key is arbitrary, but the value should match an actual <a href="#configfieldtypes">fieldType</a>.</li>
+<li>Special case is the key <strong>'_'</strong> which represent no postfix ([fieldname]) and should always be present</li>
+<li>The values to the other types are copied with a <a href="https://cwiki.apache.org/confluence/display/solr/Copying+Fields">copyField</a> from the <strong>_</strong> (source field)</li>
+</ul>
+</li>
+<li><strong>searchOptions</strong> : Config for searching on this field (for apiconfig) <a href="#configfieldsearchoptions">see</a></li>
+</ul>
+
+
+<p><strong><em>optional</em></strong>:</p>
+
+<ul>
+<li><strong>__dependency</strong> : An optional key value array, that is used to generate multiple fields based on a dependency.
+
+<ul>
+<li>All field properties and names are matched for the string '[key]' and linked to the name of the mapping declared in <a href="#configdependencyvariables">dependencyVariables</a></li>
+<li>e.g. a fieldname, named name_[lang] is mapped by a config {"lang"=>"language_codes"} to the array defined in</li>
+</ul>
+</li>
+<li>dependencyVariables with the key "language_codes", generating for each defined "language_code" a field (&amp; field sub types)</li>
+<li><strong>dataSourceStatementDependencyMapping</strong> : an optional mapping between a __dependency key and it's inherited values (from dependencyVariables) and a SQL placeholder for the [{key}_map] variable</li>
+<li><strong>uniqueKey</strong> : true/false, Solr specific property for a field, <a href="https://wiki.apache.org/solr/UniqueKey">https://wiki.apache.org/solr/UniqueKey</a></li>
+<li><strong>indexed</strong> : true/false, Solr specific property for a field, <a href="https://wiki.apache.org/solr/SchemaXml#Common_field_options">https://wiki.apache.org/solr/SchemaXml#Common_field_options</a></li>
+<li><strong>stored</strong> : true/false, Solr specific property for a field, <a href="https://wiki.apache.org/solr/SchemaXml#Common_field_options">https://wiki.apache.org/solr/SchemaXml#Common_field_options</a></li>
+<li><strong>required</strong> : true/false, Solr specific property for a field, <a href="https://wiki.apache.org/solr/SchemaXml#Common_field_options">https://wiki.apache.org/solr/SchemaXml#Common_field_options</a></li>
+<li><strong>multiValued</strong> : true/false, Solr specific property for a field, <a href="https://wiki.apache.org/solr/SchemaXml#Common_field_options">https://wiki.apache.org/solr/SchemaXml#Common_field_options</a></li>
+<li><strong>dataSourceMultivaluedSeperator</strong> : String used to split the SQL-query result for this field into the multivalued field (multiValued should be true!)</li>
+<li><strong>_comment</strong> : A comment string for the schema.xml</li>
+</ul>
+
+
+<p><strong><em> &lt;= config.json</em></strong></p>
+
+<pre><code>fieldname_[lang] : {
+    _comment: "Some demo field",
+    uniqueKey: false,
+    types: {
+        _: "string",
+        suggest: "text_[lang]_splitting",
+        edge: "autocomplete_edge",
+        ngram: "autocomplete_ngram",
+        reverse: "text_general_reversed"
+    },
+    __dependency: {
+        lang: "language_codes"
+    },
+    indexed: true,
+    stored: true,
+    required: true,
+    multiValued: true,
+    dataSourceStatement: "GROUP_CONCAT(DISTINCT kt_type.waarde_[lang_map] SEPARATOR '|')",
+    dataSourceMultivaluedSeperator: "|",
+    dataSourceStatementDependencyMapping: {
+        lang: {
+            en: "english",
+            nl: "dutch",
+            de: "deutsch",
+        }
+    },
+    dataSourceEntity: "mainentity",
+    searchOptions: {...}
+}   
+...
+dependencyVariables: {
+    language_codes: [
+        "en",
+        "nl",
+        "de"
+        ]
+    }
+</code></pre>
+
+<p><strong><em> => schema.xml</em></strong></p>
+
+<pre><code>...
+&lt;! -- fieldname_en:  Some demo field --&gt;
+  &lt;field name="fieldname_en" type="string" indexed="true" stored="true" required="true" multiValued="true"/&gt;
+  &lt;field name="fieldname_en_suggest" type="text_en_splitting" indexed="true" stored="false" required="false" multiValued="true"/&gt;
+  &lt;copyField source="fieldname_en" dest="fieldname_en_suggest"/&gt;
+  &lt;field name="fieldname_en_edge" type="autocomplete_edge" indexed="true" stored="false" required="false" multiValued="true"/&gt;
+  &lt;copyField source="fieldname_en" dest="fieldname_en_edge"/&gt;
+  &lt;field name="fieldname_en_ngram" type="autocomplete_ngram" indexed="true" stored="false" required="false" multiValued="true"/&gt;
+  &lt;copyField source="fieldname_en" dest="fieldname_en_ngram"/&gt;
+  &lt;field name="fieldname_en_reverse" type="text_general_reversed" indexed="true" stored="false" required="false" multiValued="true"/&gt;
+  &lt;copyField source="fieldname_en" dest="fieldname_en_reverse"/&gt;
+  ...
+</code></pre>
+
+<p><strong><em> => dataimport-config.xml</em></strong></p>
+
+<pre><code>...
+SELECT ... GROUP_CONCAT(DISTINCT kt_type.waarde_english SEPARATOR '|') as fieldname_en, ...
+...
+
+ &lt;field column="fieldname_en" sourceColName="fieldname_en" splitBy="|"/&gt;
+ &lt;field column="fieldname_nl" sourceColName="fieldname_nl" splitBy="|"/&gt;
+ &lt;field column="fieldname_de" sourceColName="fieldname_de" splitBy="|"/&gt;
+</code></pre>
+
+<h5><a name="configfieldsearchoptions"></a><em>[field]</em> searchOptions</h5>
+
+<p>Field's search options are used for apiconfig.json for querying fields</p>
+
+<ul>
+<li><strong>search</strong> : true/false whether this field should be searched on (has to be indexed: true) <a href="https://wiki.apache.org/solr/ExtendedDisMax#qf_.28Query_Fields.29">qf</a></li>
+<li><strong>return</strong> : true/false whether this field should be returned (has to be stored: true) <a href="https://wiki.apache.org/solr/CommonQueryParameters#fl">fl</a></li>
+<li><strong>facet</strong> : whether the sourcefield (not the copied fields), should be a facet <a href="https://wiki.apache.org/solr/SimpleFacetParameters#facet">facet</a></li>
+<li><strong>actions</strong> : list of search actions, in which this field should be considered. Has to correspond with keys in global <a href="#configsearchoptions">searchOptions</a></li>
+<li><strong>boost</strong> : base boostValue for this field, can/will be modified by each fieldType &amp; individual phraseQueries <a href="https://wiki.apache.org/solr/ExtendedDisMax#qf_.28Query_Fields.29">field^boost</a></li>
+<li><strong>fuzzy</strong> : Levensthein Distance to search for in the term <a href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html#Fuzzy%20Searches">term~fuzzy</a></li>
+<li><strong>phraseField</strong> : true/false/int whether it should be used as phraseField and if true: factor = 1, if int: the multiplier is used on <strong>boost</strong> <a href="https://wiki.apache.org/solr/ExtendedDisMax#pf_.28Phrase_Fields.29">pf</a></li>
+<li><strong>phraseFieldBiGram</strong> : same as phraseField <a href="https://wiki.apache.org/solr/ExtendedDisMax#pf2_.28Phrase_bigram_fields.29">pf2</a></li>
+<li><strong>additional</strong> : array of custom addition actions. For now only stats.field &amp; stats.facet are supported</li>
+</ul>
+
+
+<p><strong><em> &lt;= config.json</em></strong></p>
+
+<pre><code>searchOptions: {
+    search: true,
+    return: true,
+    actions: [
+        "search",
+        "autocomplete",
+        "location"
+    ],
+    facet: false,
+    boost: 100,
+    fuzzy: 4,
+    phraseField: 4,
+    phraseFieldBiGram: 3,
+    phraseFieldTriGram: 2,
+    additional: ["stats.field"]
+}
+</code></pre>
+
+<p><strong><em> => api-config.json</em></strong></p>
+
+<pre><code>fields{
+...
+,
+      "fieldname_en": {
+        "field": "fieldname_en",
+        "fuzzy": 4
+      },
+      "fieldname_en_suggest": {
+        "field": "fieldname_en_suggest",
+        "fuzzy": false
+      },
+      "fieldname_en_edge": {
+        "field": "fieldname_en_edge",
+        "fuzzy": false
+      },
+      "fieldname_en_ngram": {
+        "field": "fieldname_en_ngram",
+        "fuzzy": false
+      },
+      "fieldname_en_reverse": {
+        "field": "fieldname_en_reverse",
+        "fuzzy": 2
+      },    
+,
+queryFields: {             
+...
+     "fieldname_en": {
+        "field": "fieldname_en",
+        "boost": 10,
+        "statement": "fieldname_en^10"
+      },
+      "fieldname_en_suggest": {
+        "field": "fieldname_en_suggest",
+        "boost": 8,
+        "statement": "fieldname_en_suggest^8"
+      },
+      ...
+</code></pre>
+
+<hr />
+
+<h4><a name="configfieldtypes"></a>fieldTypes</h4>
+
+<p>FieldTypes are generated from the json into xml for the schema.xml as is. Structure, fields and values are preserved.
+Exception to this rule are all fieldType properties prefixed with __</p>
+
+<ul>
+<li><strong>__dependency</strong> : An optional key value array, that is used to generate multiple fieldTypes based on a dependency.
+
+<ul>
+<li>All field properties and names are matched for the string '[key]' and linked to the name of the mapping declared in <a href="#configdependencyvariables">dependencyVariables</a></li>
+<li>e.g. a fieldType, named text<em>[lang]</em>splitting is mapped by a config {"lang"=>"language_codes"} to the array defined in
+dependencyVariables with the key "language_codes", generating for each defined "language_code" a fieldType</li>
+</ul>
+</li>
+<li><strong>__searchBoostFactor</strong> : float, A factor applied to the boost property of a field's searchOptions</li>
+<li><strong>__searchBoostValue</strong> : float, A value replacing  he boost property of a field's searchOptions (if not false)</li>
+<li><strong>__searchFuzzyFactor</strong> : float, A factor applied to the fuzzy property of a field's searchOptions</li>
+<li><strong>__searchFuzzyValue</strong> : float, A value replacing  he fuzzy property of a field's searchOptions (if not false)</li>
+<li><strong>__searchPhraseField</strong> : true/false, whether a field of this type can be considered as phrasefield</li>
+</ul>
+
+
+<p><strong><em> &lt;= config.json</em></strong></p>
+
+<pre><code>...
+boolean: {
+    class: "solr.BoolField",
+    sortMissingLast: true,
+    __searchPhraseField: false
+},
+...
+text_[lang]_splitting: {
+    class: "solr.TextField",
+    positionIncrementGap: 100,
+    autoGeneratePhraseQueries: true,
+    __dependency: {
+        lang: "language_codes"
+    },
+    analyzer: {
+        index: {
+            charFilter: [{
+                class: "solr.MappingCharFilterFactory",
+                mapping: "mapping-ISOLatin1Accent.txt"
+            }],
+            tokenizer: [{
+                class: "solr.WhitespaceTokenizerFactory"
+            }],
+            filter: [{
+                class: "solr.StopFilterFactory",
+                ignoreCase: true,
+                words: "lang/stopwords_[lang].txt"
+            },{
+                class: "solr.WordDelimiterFilterFactory",
+                generateWordParts: 1,
+                generateNumberParts: 1,
+                catenateWords: 1,
+                catenateNumbers: 1,
+                catenateAll: 0,
+                splitOnCaseChange: 1
+            },{
+                class: "solr.LowerCaseFilterFactory"
+            },{
+                class: "solr.PorterStemFilterFactory"
+            }]},
+        query: {
+            charFilter: [{
+                class: "solr.MappingCharFilterFactory",
+                mapping: "mapping-ISOLatin1Accent.txt"
+            }],
+            tokenizer: [{
+                class: "solr.WhitespaceTokenizerFactory"
+            }],
+            filter: [{
+                class: "solr.SynonymFilterFactory",
+                synonyms: "synonyms.txt",
+                ignoreCase: true,
+                expand: true
+            },{
+                class: "solr.StopFilterFactory",
+                ignoreCase: true,
+                words: "lang/stopwords_[lang].txt"
+            },{
+                class: "solr.WordDelimiterFilterFactory",
+                generateWordParts: 1,
+                generateNumberParts: 1,
+                catenateWords: 0,
+                catenateNumbers: 0,
+                catenateAll: 0,
+                splitOnCaseChange: 1
+            },{
+                class: "solr.LowerCaseFilterFactory"
+            },{
+                class: "solr.PorterStemFilterFactory"
+            }]
+        }
+    },
+    __searchBoostFactor: 0.8,
+    __searchFuzzyValue: false
+},
+...
+</code></pre>
+
+<p><strong><em> => schema.xml</em></strong></p>
+
+<pre><code>&lt;! -- boolean --&gt;
+&lt;fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/&gt;
+
+&lt;! -- text_en_splitting --&gt;
+  &lt;fieldType name="text_en_splitting" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true"&gt;
+    &lt;analyzer&gt;
+      &lt;charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/&gt;
+      &lt;tokenizer class="solr.WhitespaceTokenizerFactory"/&gt;
+      &lt;filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_en.txt"/&gt;
+      &lt;filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/&gt;
+      &lt;filter class="solr.LowerCaseFilterFactory"/&gt;
+      &lt;filter class="solr.PorterStemFilterFactory"/&gt;
+    &lt;/analyzer&gt;
+    &lt;analyzer&gt;
+      &lt;charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/&gt;
+      &lt;tokenizer class="solr.WhitespaceTokenizerFactory"/&gt;
+      &lt;filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/&gt;
+      &lt;filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_en.txt"/&gt;
+      &lt;filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/&gt;
+      &lt;filter class="solr.LowerCaseFilterFactory"/&gt;
+      &lt;filter class="solr.PorterStemFilterFactory"/&gt;
+    &lt;/analyzer&gt;
+  &lt;/fieldType&gt;
+</code></pre>
+
+<hr />
+
+<h4><a name="configdatasources"></a>dataSources</h4>
+
+<p>This section covers the configuration of datasources.
+Of course solrconfig.xml has to be configured for use of these datasources
+As for now only Jdbc data sources have been tested, but in theory it should support different kinds as well.</p>
+
+<p>Each (jdbc) data source is identified by a key (for reference in <a href="#configentityqueries">entityQueries</a> ) and sees all properies as attributes for in dataimport-config.xml.</p>
+
+<p>e.g. for <a href="https://wiki.apache.org/solr/DataImportHandler#Usage_with_RDBMS">JDBC/MySQL</a> (only working test case)</p>
+
+<p><strong><em> &lt;= config.json</em></strong></p>
+
+<pre><code>db1: {
+    type: "JdbcDataSource",
+    driver: "com.mysql.jdbc.Driver",
+    url: "jdbc:mysql://[host]/[db]",
+    user: "[user]",
+    password: "[password]",
+    batchSize: -1
+},
+</code></pre>
+
+<p><strong><em> => dataimport-config.xml</em></strong></p>
+
+<pre><code>&lt;dataSource name="db1" type="JdbcDataSource" driver="com.mysql.jdbc.Driver" url="jdbc:mysql://host.com/db" user="uname" password="pwd" batchSize="-1"/&gt;
+</code></pre>
+
+<hr />
+
+<h4><a name="configentityqueries"></a>entityQueries</h4>
+
+<p>Solr supports many entities in dataimport-config.xml that save to 1 record in the core
+It is adviced to do as much using JOINS in your query, since performance is overall better, but exceptions can be made.</p>
+
+<p>entityQueries consists of key value pairs, where the key is the name/id of the entity and the value consists of it's configuration.</p>
+
+<p>EntityQuery configs have these properties:</p>
+
+<ul>
+<li><strong>dataSource</strong> : the key of the dataSource defined in <a href="#configdatasources">dataSources</a>. One dataSource can have multiple entities, but an entity only has 1 dataSource</li>
+<li><strong>transformers</strong> : List of used <a href="https://wiki.apache.org/solr/DataImportHandler#Transformer">Solr transformers </a></li>
+<li><strong>tables</strong> : List of custom sets of from / join strings. The reason is that in all the queries a lot of the same table (groups) are queries, this way you can combine them any way you like, by refencing the tablegroup label instead of repeating FROM's and JOINS over and over
+
+<ul>
+<li>So the tables property has an lis of key-value-pairs, where the key is used as identifier and the value is a list of strings, containing FROM &amp; JOINS</li>
+</ul>
+</li>
+<li><strong>queries</strong> : The entity has some (optional) <a href="https://wiki.apache.org/solr/DataImportHandler#Schema_for_the_data_config">specific queries</a> that can be used accoring to the <a href="https://wiki.apache.org/solr/DataImportHandler#Schema_for_the_data_config">Solr Documentation</a>. These are the (optional) properties of the queries object. Each defining which tables, filters and optionally fields should be queried. Like: <em>query</em>, <em>deltaQuery</em>, <em>parentDeltaQuery</em>, <em>deletedPkQuery</em>, <em>deltaImportQuery</em>
+
+<ul>
+<li><strong>filter</strong> : contains a string with the WHERE clause (optionaly also grouping/having) for this specific query. Use <a href="https://wiki.apache.org/solr/DataImportHandler#Using_delta-import_command">placeholders</a> where nessecary</li>
+<li><strong>tables</strong>: contains a list of the id's of the applicable tablegroups use</li>
+<li><strong>fields</strong>: (optional). Ordinary selects all fields applicable for this entity (dataSourceEntity property in <a href="#configfields">fields</a>). Defining this property with a list of the fieldNames, it only queries those.</li>
+</ul>
+</li>
+<li><strong>parentEntity</strong> : Optionally this propertie enables entity nesting <a href="https://wiki.apache.org/solr/DataImportHandler#Full_Import_Example">see examples</a></li>
+<li><strong>pk</strong>: If a parentEntity is defined, this forces the PrimaryKey</li>
+</ul>
+
+
+<p><strong><em> &lt;= config.json</em></strong></p>
+
+<pre><code>entityQueries: {
+    mainentity: {
+        dataSource: "db1",
+        transformers: [
+            "RegexTransformer"
+            ],
+        tables: {
+            main: [
+                "FROM `maintable` t1"
+            ],
+            all: [
+                "LEFT JOIN `subtable` subt_land ON t1.`land`=subt_land.`code`",
+                "LEFT JOIN `subtable` subt_provincie ON t1.`provincie`=subt_provincie.`code`",
+                "LEFT JOIN `subtable` subt_moeder ON t1.`scode`=subt_moeder.`code`",
+                "LEFT JOIN `subtable` subt_scode ON t1.`scode`=subt_scode.`code`",
+                "LEFT JOIN `subtable` subt_bcode ON t1.`bcode`=subt_bcode.`code`"
+            ]
+        },
+        queries: {
+            query: {
+                filter: "WHERE t1.`status` &gt; 0 GROUP BY t1.`klantnr`",
+                tables: [
+                    "main",
+                    "all"
+                ]
+            },
+            deltaImportQuery: {
+                filter: "WHERE t1.`klantnr`='${dih.delta.id}' GROUP BY t1.`klantnr`",
+                tables: [
+                    "main",
+                    "all"
+                ]
+            },
+            deltaQuery: {
+                filter: "WHERE t1.`updatedon` &gt; '${dih.last_index_time}'",
+                tables: [
+                    "main"
+                ],
+                fields: [
+                    "id"
+                ]
+            }
+        }
+    },
+    subentity: {
+        dataSource: "db2",
+        parentEntity: "mainentity",
+        pk: "klantnr",
+        tables: {
+            main: [
+                "FROM `t1_surrounding` t1s"
+            ]
+        },
+        queries: {
+            query: {
+                filter: "WHERE t1s.`klantnr`= '${mainentity.id}'",
+                tables: [
+                    "main"  
+                ]
+            }
+        }
+    }
+    ...
+</code></pre>
+
+<p><strong><em> => dataimport-config.xml</em></strong></p>
+
+<pre><code>  &lt;document&gt;
+    &lt;entity name="mainentity" dataSource="db1" transformer="RegexTransformer" pk="id" query="SELECT     
+        t1.`klantnr` as `id`,
+        t1.`status` as `status`,
+        ...
+        FROM `maintable` t1 
+        LEFT JOIN `subtable` subt_land ON t1.`land`=subt_land.`code`
+        ...
+        WHERE t1.`status` &amp;gt; 0 GROUP BY t1.`klantnr`;" 
+    deltaImportQuery="SELECT 
+        t1.`klantnr` as `id`,
+        t1.`status` as `status`,
+        ...
+        FROM `maintable` t1 
+        LEFT JOIN `subtable` subt_land ON t1.`land`=subt_land.`code`
+        ...
+        WHERE t1.`klantnr`='${dih.delta.id}' GROUP BY t1.`klantnr`;
+    " deltaQuery="SELECT 
+        t1.`klantnr` as `id` 
+        FROM `maintable` t1 
+        WHERE t1.`updatedon` &amp;gt; '${dih.last_index_time}';"&gt;
+        &lt;field ... /&gt;
+        &lt;field ... /&gt;
+        ...
+        &lt;entity name="subentity" dataSource="db2" transformer="RegexTransformer" pk="klantnr" query="SELECT...
+</code></pre>
+
+<hr />
+
+<h4><a name="configsearchoptions"></a>searchOptions</h4>
+
+<p>This section defines global search options and the possibel search actions to be perfomed by the API.</p>
+
+<p>Each property of searchOptions is a key-value-pair, where the key is the identifier for the search action to be performed/handled by the api.</p>
+
+<p>Every action has these attributes</p>
+
+<ul>
+<li><strong>type</strong>: Only handled values are edismax/dismax and <em>null</em> (standard parser) <a href="https://cwiki.apache.org/confluence/display/solr/Query+Syntax+and+Parsing">documentation</a></li>
+<li><strong>facets</strong>: true/false whether facets are enabled for this query</li>
+<li><strong>options</strong>: a array of key-value-pairs, that are passed to the select query (url parameter) <a href="https://cwiki.apache.org/confluence/display/solr/The+Extended+DisMax+Query+Parser">see</a></li>
+<li><strong>minimumMatch</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>queryPhraseSlop</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>phraseSlop</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>phraseBiGramSlop</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+Extended+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>phraseTriGramSlop</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+Extended+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>boostQuery</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>boostFunctions</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>boostFunctionsMult</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>tie</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+DisMax+Query+Parser">see documentation</a></li>
+<li><strong>userFields</strong>: <a href="https://cwiki.apache.org/confluence/display/solr/The+Extended+DisMax+Query+Parser">see documentation</a></li>
+</ul>
+
+
+<p><strong><em> &lt;= config.json</em></strong></p>
+
+<pre><code>searchOptions: {
+    search: {
+        type: "EDisMax",
+        facets: true,
+        options: {
+            lowercaseOperators: true,
+            stopwords: true,
+            indent: true,
+            stats: true
+        },
+        minimumMatch: "2&lt;-1 5&lt;80%",
+        queryPhraseSlop: 2,
+        phraseSlop: 2,
+        phraseBiGramSlop: 2,
+        phraseTriGramSlop: 2
+},
+</code></pre>
+
+<p><strong><em> => apiconfig.json</em></strong></p>
+
+<pre><code> "search": {
+    "type": "EDisMax",
+    "facets": true,
+    "options": {
+      "lowercaseOperators": true,
+      "stopwords": true,
+      "indent": true,
+      "stats": true,
+      "stats.field": [
+        "latitude",
+        "longitude"
+      ]
+    },
+    "minimumMatch": "2&lt;-1 5&lt;80%",
+    "queryPhraseSlop": 2,
+    "phraseSlop": 2,
+    "phraseBiGramSlop": 2,
+    "phraseTriGramSlop": 2,
+    ...
+</code></pre>
+
+<hr />
+
+<h4><a name="configdependencyvariables"></a>dependencyVariables</h4>
+
+<p>The dependency variables are a construct to create many similar fields without copy/pasting
+The idea  is that a single field can duplicates be used to store for example different translations.</p>
+
+<p>Every dependency variable is crossed with each other to create unique combinations so 3 dependencies with resp. 5, 8 and 3 iterators will generate 120 base field (multplied by number of subtypes) on fields dependant on all 3 dependencies.</p>
+
+<p>In theory one field can reuse the same dependency, to create cross products of a single dependency</p>
+
+<pre><code>dependencyVariables: {
+    language_codes: [
+        "en",
+        "nl",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pl"
+    ],
+    "colors": {
+        "red",
+        "blue",
+        "green"
+    }
+},
+</code></pre>
+
+<hr />
+</body>
+</html>
