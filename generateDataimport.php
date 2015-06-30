@@ -19,7 +19,9 @@ if (json_last_error()) {
 $dataimportDoc = new DOMDocument("1.0", "UTF-8");
 $dataimportDoc->preserveWhiteSpace = true;
 $dataimportDoc->formatOutput = true;
+
 $dataConfig = $dataimportDoc->createElement('dataConfig');
+
 
 $mainDataSource = null;
 foreach ($config['dataSources'] as $name => $data) {
@@ -40,17 +42,19 @@ if (isset($config['dependencyVariables'])) {
 }
 
 $document = $dataimportDoc->createElement('document');
+$dataConfig->appendChild($document);
+
 
 
 $fields = $config['fields'];
 $entityQueries = $config['entityQueries'];
-$defaultMultivaluedDataSourceSplitBy = $config['defaultMultivaluedDataSourceSplitBy'];
+
 // fields generation
 
-createQueriesConfig($dataimportDoc, $document, $fields, $entityQueries, $dependencyVariables, $defaultMultivaluedDataSourceSplitBy);
+createQueriesConfig($dataimportDoc, $document, $fields, $entityQueries, $dependencyVariables);
 
 
-$dataSource->appendChild($document);
+//$dataSource->appendChild($document);
 
 
 // parsing XML creating readable dataimport.xml
@@ -60,12 +64,12 @@ $xml = $dataimportDoc->saveXML();
 $xml = preg_replace("/\s+<!--NEWLINE-->/is", "\n", $xml);
 $xml = preg_replace("/&#10;/is", "\n", $xml);
 $xml = preg_replace("/&#9;/is", "\t", $xml);
-print $xml;
+//print $xml;
 
 file_put_contents('target/dataimport.xml', $xml);
 
 
-function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVariables, $defaultSplitBy)
+function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVariables)
 {
 
     // select
@@ -104,15 +108,15 @@ function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVa
 
 
                 if (isset($fieldInfo['multiValued']) && $fieldInfo['multiValued']) {
-                    $statement .= " as `{$currentFieldName}_mult`";
+                    $statement .= " as `{$currentFieldName}`";
                 } else {
                     $statement .= " as `{$currentFieldName}`";
                 }
                 $selectFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = $statement;
 
-                if (isset($fieldInfo['multiValued']) && $fieldInfo['multiValued']) {
-                    $sep = isset($fieldInfo['dataSourceMultivaluedSeperator']) ? $fieldInfo['dataSourceMultivaluedSeperator'] : $defaultSplitBy;
-                    $importFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = array('column' => $currentFieldName, 'sourceColName' => $currentFieldName . '_mult', 'splitBy' => $sep);
+                if (isset($fieldInfo['dataSourceMultivaluedSeperator'])){
+                    $importFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = array('column' => $currentFieldName, 'sourceColName' => $currentFieldName, 'splitBy'=>$fieldInfo['dataSourceMultivaluedSeperator']);
+
                 } else {
                     $importFields[$fieldInfo['dataSourceEntity']][$currentFieldName] = array('column' => $currentFieldName, 'name' => $currentFieldName);
                 }
@@ -127,9 +131,9 @@ function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVa
 
     // from
     $entitiesXML = array();
-    $tabs = str_repeat("\t", 20);
-    $tabs2 = str_repeat("\t", 19);
-    $tabs3 = str_repeat("\t", 18);
+    $tabs = str_repeat("\t", 15);
+    $tabs2 = str_repeat("\t", 14);
+    $tabs3 = str_repeat("\t", 13);
     foreach ($entityQueries as $entityName => $queryInfo) {
         $entity = $doc->createElement('entity');
         $entity->setAttribute('name', $entityName);
@@ -137,7 +141,7 @@ function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVa
             $entity->setAttribute('dataSource', $queryInfo['dataSource']);
         }
         if (isset($queryInfo['transformers'])) {
-            $entity->setAttribute('transformers', implode(",", $queryInfo['transformers']));
+            $entity->setAttribute('transformer', implode(",", $queryInfo['transformers']));
         }
         if(isset($queryInfo['pk'])){
             $entity->setAttribute('pk', $queryInfo['pk']);

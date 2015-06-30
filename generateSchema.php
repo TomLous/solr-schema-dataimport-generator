@@ -175,6 +175,12 @@ function createFieldTypeConfig(&$doc, &$el, $fieldType,  $fieldTypeInfo, $depend
     global $foundTypes;
     global $unusedTypes;
 
+    foreach($fieldTypeInfo as $key=>$val){
+        if(substr($key, 0, 2 )=='__'){
+            unset($fieldTypeInfo[$key]);
+        }
+    }
+
     foreach($dependancyArray as $pos=>$dependancyData){
         $currentFieldType = dependencyParser($fieldType, $dependancyData);
 
@@ -189,6 +195,8 @@ function createFieldTypeConfig(&$doc, &$el, $fieldType,  $fieldTypeInfo, $depend
         $el->appendChild($comment);
 
         $field = $doc->createElement('fieldType');
+        $field->setAttribute('name', $currentFieldType);
+
 
         jsonToXML($doc, $field, $fieldTypeInfo, $dependancyData);
         $el->appendChild($field);

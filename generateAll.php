@@ -7,3 +7,4 @@
  */
 include('generateSchema.php');
 include('generateDataimport.php');
+include('generatePHPAPIConfig.php');
