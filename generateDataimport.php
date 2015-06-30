@@ -6,7 +6,7 @@
  * Datetime:     16/06/15 11:25
  */
 
-print PHP_EOL . "------------------------------------" . PHP_EOL . "Generating dataimport.xml" . PHP_EOL;
+print PHP_EOL . "------------------------------------" . PHP_EOL . "Generating dataimport-config.xml" . PHP_EOL;
 include_once('utils.php');
 // Make sure to escape all slashes in Json eg"pattern": "([\.,;:-_])", => "pattern": "([\\.,;:-_])",
 $config = json_decode(file_get_contents("config/config.json"), true);
@@ -66,7 +66,7 @@ $xml = preg_replace("/&#10;/is", "\n", $xml);
 $xml = preg_replace("/&#9;/is", "\t", $xml);
 //print $xml;
 
-file_put_contents('target/dataimport.xml', $xml);
+file_put_contents('target/dataimport-config.xml', $xml);
 
 
 function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVariables)
