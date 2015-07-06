@@ -122,7 +122,7 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                     // set fields
 
                     if($fieldData['return'] && isset($conf[$action]['fields'])){
-                        $conf[$action]['fields'][$currentFieldName] = array('field'=>$currentFieldName,'fuzzy'=>$fieldData['fuzzy']);
+                        $conf[$action]['fields'][$currentFieldName] = array('field'=>$currentFieldName,'fuzzy'=>$fieldData['fuzzy'], 'main'=>$isSourceField);
                     }
 
                     if($fieldData['search'] && $fieldData['boost'] && isset($conf[$action]['queryFields'])){

@@ -9,11 +9,19 @@
 date_default_timezone_set('Europe/Amsterdam');
 
 function jsonToXML(&$doc, &$el, $data, $dependancyData){
+
+    print PHP_EOL.PHP_EOL."------------".PHP_EOL;
+//    print_r($data);
+
     foreach($data as $key=>$val){
         $key = dependencyParser($key, $dependancyData);
 
+//        print PHP_EOL.$key;
+
+
 
         if(is_scalar($val)){
+
             if($val === true){
                 $val = 'true';
             }elseif($val === false){
@@ -29,12 +37,17 @@ function jsonToXML(&$doc, &$el, $data, $dependancyData){
                 $el->setAttribute($key, $val);
             }
         }elseif(is_array($val)){
-            foreach($val as $subval){
+            foreach($val as $subkey=>$subval){
                 $subel = $doc->createElement($key);
+                if(!is_numeric($subkey)){
+                    $subel->setAttribute('type', $subkey);
+                }
+
                 jsonToXML($doc, $subel, $subval, $dependancyData);
                 $el->appendChild($subel);
             }
         }else{
+            print "2".$key;
             $subel = $doc->createElement($key);
             jsonToXML($doc, $subel, $val, $dependancyData);
             $el->appendChild($subel);
@@ -163,4 +176,19 @@ function jsonFormat($json_obj)
     }
 
     return $new_json;
+}
+
+function doComparison($a, $operator, $b)
+{
+    switch ($operator) {
+        case '<':  return ($a <  $b); break;
+        case '<=': return ($a <= $b); break;
+        case '=':  return ($a == $b); break; // SQL way
+        case '==': return ($a == $b); break;
+        case '!=': return ($a != $b); break;
+        case '>=': return ($a >= $b); break;
+        case '>':  return ($a >  $b); break;
+    }
+
+    throw new Exception("The {$operator} operator does not exists", 1);
 }

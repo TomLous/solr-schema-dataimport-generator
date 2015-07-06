@@ -205,6 +205,7 @@ function createFieldTypeConfig(&$doc, &$el, $fieldType,  $fieldTypeInfo, $depend
         $field->setAttribute('name', $currentFieldType);
 
 
+
         jsonToXML($doc, $field, $fieldTypeInfo, $dependancyData);
         $el->appendChild($field);
         $comment = new DOMComment("NEWLINE");

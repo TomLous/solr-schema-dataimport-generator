@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData">
+    <serverData>
+      <paths name="solr api config">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tom-local.apiconfig.json" local="$PROJECT_DIR$/target/apiconfig.json" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="solr config">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$/target" web="/" />
+            <mapping deploy="/" local="$PROJECT_DIR$/config" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="solr digital ocean">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/outlets/conf" local="$PROJECT_DIR$/target" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
+
