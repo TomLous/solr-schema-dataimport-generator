@@ -36,11 +36,14 @@ foreach($apiConfig as $action => $data ){
     $apiConfig[$action]['phraseFields'] = array();
     $apiConfig[$action]['phraseBiGramFields'] = array();
     $apiConfig[$action]['phraseTriGramFields'] = array();
+    $apiConfig[$action]['columns'] = array();
     if($data['facets']){
         $apiConfig[$action]['facetFields'] = array();
     }
     $apiConfig[$action]['dependencyFields'] = array();
 }
+
+
 
 // fields generation
 foreach($fields as $fieldName=>$fieldInfo){
@@ -50,7 +53,13 @@ foreach($fields as $fieldName=>$fieldInfo){
 
 foreach($apiConfig as $action => $data ){
     $apiConfig[$action]['dependencies']  = array_values($apiConfig[$action]['dependencies']);
+    usort($apiConfig[$action]['columns'], function ($a, $b) {
+        return $a['columnPosition'] > $b['columnPosition'];
+    });
+//    $apiConfig[$action]['columns'] = array_values($apiConfig[$action]['columns']);
 }
+
+
 
 $apiConfig['__meta']=array('comment'=>"Generated ".date('Y-m-d')." with Solr Schema Generator (https://github.com/TomLous/solr-schema-dataimport-generator)");
 file_put_contents('target/apiconfig.json', jsonFormat($apiConfig));
@@ -61,10 +70,14 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
 
     if(isset($fieldInfo['searchOptions'])){
         foreach($dependancyArray as $pos=>$dependancyData){
-            $actions = $fieldInfo['searchOptions']['actions'];
+            $searchActions = $fieldInfo['searchOptions']['searchActions'];
+            $returnActions = $fieldInfo['searchOptions']['returnActions'];
+
+            $combinedActions = array_unique(array_merge($searchActions, $returnActions));
+
 
             foreach($fieldInfo['types'] as $fieldNamePostfix=>$fieldType){
-                foreach($actions as $action){
+                foreach($combinedActions as $action){
                     $isSourceField = false;
                     $currentFieldName = $fieldName;
                     if($fieldNamePostfix == '_'){
@@ -95,6 +108,10 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                     $defaults = array('search'=>false,'return'=>false,'facet'=>false, 'boost'=>0, 'fuzzy'=>false, 'additional'=>array(), 'phraseField'=>false, 'phraseFieldBiGram'=>false, 'phraseFieldTriGram'=>false);
                     $fieldData = array_merge($defaults, $fieldInfo['searchOptions'], $dependancyData);
 
+
+                    $setSearch = array_search($action, $searchActions)!==false && $fieldData['search'];
+                    $setReturn =  array_search($action, $returnActions)!==false && $fieldData['return'];
+
                     $fieldTypeData = $config['fieldTypes'][$fieldType];
 
                     if(isset($fieldTypeData['__searchPhraseField'])){
@@ -119,19 +136,32 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                         $fieldData['fuzzy'] = $fieldTypeData['__searchFuzzyValue'];
                     }
 
+                    $fieldData['wildcard'] = true;
+                    if(isset($fieldTypeData["__searchWildcard"])){
+                        $fieldData['wildcard'] = $fieldTypeData["__searchWildcard"];
+                    }
+
                     // set fields
 
-                    if($fieldData['return'] && isset($conf[$action]['fields'])){
+                    if($setReturn && isset($conf[$action]['fields'])){
                         $conf[$action]['fields'][$currentFieldName] = array('field'=>$currentFieldName,'fuzzy'=>$fieldData['fuzzy'], 'main'=>$isSourceField);
                     }
 
-                    if($fieldData['search'] && $fieldData['boost'] && isset($conf[$action]['queryFields'])){
+                    if($isSourceField && $fieldData['columnPosition']!==false){
+                        $columnData = array('field'=>$currentFieldName, 'columnShow'=>$fieldData['columnShow'],'columnPosition'=> $fieldData['columnPosition'], 'category'=> $fieldData['category']);
+                        if($dependancyConf && isset($conf[$action]['dependencyFields'])){
+                            $columnData['dependency'] = $dependancyConf;
+                        }
+                        $conf[$action]['columns'][] = $columnData;
+                    }
+
+                    if($setSearch && $fieldData['boost'] && isset($conf[$action]['queryFields'])){
                         $statement = $currentFieldName . ((is_numeric($fieldData['boost']) && $fieldData['boost']!=1)?"^".ceil($fieldData['boost']):"");
-                        $conf[$action]['queryFields'][$currentFieldName] = array('field'=>$currentFieldName, 'boost'=>$fieldData['boost'], 'statement'=>$statement);
+                        $conf[$action]['queryFields'][$currentFieldName] = array('field'=>$currentFieldName, 'boost'=>$fieldData['boost'], 'statement'=>$statement, 'wildcard'=>$fieldData['wildcard']);
 
                     }
 
-                    if($fieldData['phraseField'] && isset($conf[$action]['phraseFields'])){
+                    if($setSearch && $fieldData['phraseField'] && isset($conf[$action]['phraseFields'])){
                         $phraseBoost = isset($fieldData['boost']) ? $fieldData['boost'] : 1;
                         $phraseBoost *= is_numeric($fieldData['phraseField'])?intval($fieldData['phraseField']):1;
                         $phraseBoost = ceil($phraseBoost);
@@ -139,7 +169,7 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                         $conf[$action]['phraseFields'][$currentFieldName] = array('field'=>$currentFieldName, 'boost'=>$phraseBoost, 'statement'=>$statement);
                     }
 
-                    if($fieldData['phraseFieldBiGram'] && isset($conf[$action]['phraseBiGramFields'])){
+                    if($setSearch && $fieldData['phraseFieldBiGram'] && isset($conf[$action]['phraseBiGramFields'])){
                         $phraseBoost = isset($fieldData['boost']) ? $fieldData['boost'] : 1;
                         $phraseBoost *= is_numeric($fieldData['phraseFieldBiGram'])?intval($fieldData['phraseFieldBiGram']):1;
                         $phraseBoost = ceil($phraseBoost);
@@ -147,7 +177,7 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                         $conf[$action]['phraseBiGramFields'][$currentFieldName] = array('field'=>$currentFieldName, 'boost'=>$phraseBoost, 'statement'=>$statement);
                     }
 
-                    if($fieldData['phraseFieldTriGram'] && isset($conf[$action]['phraseTriGramFields'])){
+                    if($setSearch && $fieldData['phraseFieldTriGram'] && isset($conf[$action]['phraseTriGramFields'])){
                         $phraseBoost = isset($fieldData['boost']) ? $fieldData['boost'] : 1;
                         $phraseBoost *= is_numeric($fieldData['phraseFieldTriGram'])?intval($fieldData['phraseFieldTriGram']):1;
                         $phraseBoost = ceil($phraseBoost);
@@ -155,7 +185,7 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                         $conf[$action]['phraseTriGramFields'][$currentFieldName] = array('field'=>$currentFieldName, 'boost'=>$phraseBoost, 'statement'=>$statement);
                     }
 
-                    if($isSourceField && $fieldData['facet']  && $conf[$action]['facets'] && isset($conf[$action]['facetFields'])){
+                    if($setSearch && $isSourceField && $fieldData['facet']  && $conf[$action]['facets'] && isset($conf[$action]['facetFields'])){
                         $conf[$action]['facetFields'][$currentFieldName] = array('field'=>$currentFieldName);
                     }
 
@@ -164,12 +194,15 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                     }
 
                     foreach($fieldData['additional'] as $key=>$opt){
-                        if($opt == "stats.field"){
+                        if(($opt == "stats.field" || $opt == "stats.facet") && isset($conf[$action]['options']['stats']) && $conf[$action]['options']['stats']){
                             if(!isset($conf[$action]['options'][$opt])){
                                 $conf[$action]['options'][$opt]= array();
                             }
                             $conf[$action]['options'][$opt][] = $currentFieldName;
 
+                        }
+                        if(($opt == "facet.heatmap") && isset($conf[$action]['custom']['heatmap'])){
+                            $conf[$action]['custom']['heatmap'][$opt] = $currentFieldName;
                         }
                     }
 

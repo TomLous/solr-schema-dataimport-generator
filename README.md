@@ -195,23 +195,28 @@ fields{
 ,
       "fieldname_en": {
         "field": "fieldname_en",
-        "fuzzy": 4
+        "fuzzy": 4,
+        "main" : true
       },
       "fieldname_en_suggest": {
         "field": "fieldname_en_suggest",
-        "fuzzy": false
+        "fuzzy": false,
+        "main" : false
       },
       "fieldname_en_edge": {
         "field": "fieldname_en_edge",
-        "fuzzy": false
+        "fuzzy": false,
+        "main" : false
       },
       "fieldname_en_ngram": {
         "field": "fieldname_en_ngram",
-        "fuzzy": false
+        "fuzzy": false,
+        "main" : false
       },
       "fieldname_en_reverse": {
         "field": "fieldname_en_reverse",
-        "fuzzy": 2
+        "fuzzy": 2,
+        "main" : false
       },    
 ,
 queryFields: {             
@@ -337,7 +342,7 @@ text_[lang]_splitting: {
 
 <! -- text_en_splitting -->
   <fieldType name="text_en_splitting" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
-    <analyzer>
+    <analyzer type="index">
       <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/>
       <tokenizer class="solr.WhitespaceTokenizerFactory"/>
       <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_en.txt"/>
@@ -345,7 +350,7 @@ text_[lang]_splitting: {
       <filter class="solr.LowerCaseFilterFactory"/>
       <filter class="solr.PorterStemFilterFactory"/>
     </analyzer>
-    <analyzer>
+    <analyzer type="query">
       <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/>
       <tokenizer class="solr.WhitespaceTokenizerFactory"/>
       <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>

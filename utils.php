@@ -10,7 +10,7 @@ date_default_timezone_set('Europe/Amsterdam');
 
 function jsonToXML(&$doc, &$el, $data, $dependancyData){
 
-    print PHP_EOL.PHP_EOL."------------".PHP_EOL;
+//    print PHP_EOL.PHP_EOL."------------".PHP_EOL;
 //    print_r($data);
 
     foreach($data as $key=>$val){
