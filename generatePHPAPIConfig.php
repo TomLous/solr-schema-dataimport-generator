@@ -109,6 +109,7 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                     $fieldData = array_merge($defaults, $fieldInfo['searchOptions'], $dependancyData);
 
 
+
                     $setSearch = array_search($action, $searchActions)!==false && $fieldData['search'];
                     $setReturn =  array_search($action, $returnActions)!==false && $fieldData['return'];
 
@@ -149,8 +150,16 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
 
                     if($isSourceField && $fieldData['columnPosition']!==false){
                         $columnData = array('field'=>$currentFieldName, 'columnShow'=>$fieldData['columnShow'],'columnPosition'=> $fieldData['columnPosition'], 'category'=> $fieldData['category']);
+                        if(isset($fieldInfo['multiValued'])){
+                            $columnData['multiValued'] = true;
+                        }
                         if($dependancyConf && isset($conf[$action]['dependencyFields'])){
                             $columnData['dependency'] = $dependancyConf;
+                        }
+                        if(isset($fieldData['columnName'])){
+                            $columnData['columnName'] = $fieldData['columnName'];
+                        }else{
+                            $columnData['columnName'] = $currentFieldName;
                         }
                         $conf[$action]['columns'][] = $columnData;
                     }
