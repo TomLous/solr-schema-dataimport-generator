@@ -26,6 +26,15 @@ $dataimportDoc->appendChild($comment);
 $dataConfig = $dataimportDoc->createElement('dataConfig');
 
 
+$propertyWriter = $dataimportDoc->createElement('propertyWriter');
+$propertyWriter->setAttribute('dateFormat', "yyyy-MM-dd HH:mm:ss");
+$propertyWriter->setAttribute('type', "ZKPropertiesWriter");
+//$propertyWriter->setAttribute('directory', "data");
+$propertyWriter->setAttribute('filename', "dataimport.properties");
+//$propertyWriter->setAttribute('locale', "en_US.utf8");
+
+$dataConfig->appendChild($propertyWriter);
+
 $mainDataSource = null;
 foreach ($config['dataSources'] as $name => $data) {
     $dataSource = $dataimportDoc->createElement('dataSource');
@@ -67,6 +76,7 @@ $xml = $dataimportDoc->saveXML();
 $xml = preg_replace("/\s+<!--NEWLINE-->/is", "\n", $xml);
 $xml = preg_replace("/&#10;/is", "\n", $xml);
 $xml = preg_replace("/&#9;/is", "\t", $xml);
+//$xml = preg_replace("/⁄/is", "&frasl;", $xml);
 //print $xml;
 
 file_put_contents('target/dataimport-config.xml', $xml);

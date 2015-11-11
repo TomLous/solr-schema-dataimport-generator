@@ -13,7 +13,7 @@
         <serverdata>
           <mappings>
             <mapping deploy="/" local="$PROJECT_DIR$/target" web="/" />
-            <mapping deploy="/" local="$PROJECT_DIR$/config" />
+            <mapping deploy="/" local="$PROJECT_DIR$/config" web="/" />
           </mappings>
         </serverdata>
       </paths>
