@@ -112,6 +112,7 @@ function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArra
                 $el->appendChild($comment);
             }
 
+            $dynamic = isset($fieldInfo['dynamic'])?$fieldInfo['dynamic']:false;
             $indexed = isset($fieldInfo['indexed'])?$fieldInfo['indexed']:true;
             $stored = isset($fieldInfo['stored'])&& $isSourceField?$fieldInfo['stored']:false;
             $required = isset($fieldInfo['required'])&& $isSourceField?$fieldInfo['required']:false;
@@ -123,7 +124,7 @@ function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArra
             $termOffsets = isset($fieldInfo['termOffsets'])&& $isSourceField?$fieldInfo['termOffsets']:null;
             $default = isset($fieldInfo['default'])&& $isSourceField?$fieldInfo['default']:null;
 
-            $field = $doc->createElement('field');
+            $field = $doc->createElement($dynamic? 'dynamicField' : 'field');
             $field->setAttribute("name", $currentFieldName);
             $field->setAttribute('type', $currentFieldType);
             $field->setAttribute('indexed', $indexed?'true':'false');

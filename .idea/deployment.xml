@@ -17,6 +17,14 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="solr config dev">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$/target" web="/" />
+            <mapping deploy="/" local="$PROJECT_DIR$/config" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="solr digital ocean">
         <serverdata>
           <mappings>
@@ -27,4 +35,3 @@
     </serverData>
   </component>
 </project>
-
