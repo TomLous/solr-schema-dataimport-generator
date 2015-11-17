@@ -123,6 +123,7 @@ function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArra
             $termPositions = isset($fieldInfo['termPositions'])&& $isSourceField?$fieldInfo['termPositions']:null;
             $termOffsets = isset($fieldInfo['termOffsets'])&& $isSourceField?$fieldInfo['termOffsets']:null;
             $default = isset($fieldInfo['default'])&& $isSourceField?$fieldInfo['default']:null;
+            $copyTo = isset($fieldInfo['copyTo'])&& $isSourceField?$fieldInfo['copyTo']:null;
 
             $field = $doc->createElement($dynamic? 'dynamicField' : 'field');
             $field->setAttribute("name", $currentFieldName);
@@ -157,7 +158,14 @@ function createFieldConfig(&$doc, &$el, $fieldName,  $fieldInfo, $dependancyArra
                 $field->setAttribute('source', $sourceFieldName);
                 $field->setAttribute('dest', $currentFieldName);
                 $el->appendChild($field);
-
+            }
+            if(is_array($copyTo)){
+                foreach($copyTo as $destField){
+                    $field = $doc->createElement('copyField');
+                    $field->setAttribute('source', $sourceFieldName);
+                    $field->setAttribute('dest', $destField);
+                    $el->appendChild($field);
+                }
             }
 
         }

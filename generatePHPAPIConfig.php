@@ -210,7 +210,7 @@ function createAPIConfig(&$conf, $fieldName,  $fieldInfo, $dependancyArray){
                             $conf[$action]['options'][$opt][] = $currentFieldName;
 
                         }
-                        if(($opt == "facet.heatmap") && isset($conf[$action]['custom']['heatmap'])){
+                        if(($opt == "facet.heatmap") && isset($conf[$action]['custom']['heatmap']) && !isset($conf[$action]['custom']['heatmap'][$opt])){
                             $conf[$action]['custom']['heatmap'][$opt] = $currentFieldName;
                         }
                     }
