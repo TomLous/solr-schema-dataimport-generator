@@ -76,6 +76,7 @@ $xml = $dataimportDoc->saveXML();
 $xml = preg_replace("/\s+<!--NEWLINE-->/is", "\n", $xml);
 $xml = preg_replace("/&#10;/is", "\n", $xml);
 $xml = preg_replace("/&#9;/is", "\t", $xml);
+$xml = preg_replace("/&#8203;/is", " ", $xml);
 //$xml = preg_replace("/⁄/is", "&frasl;", $xml);
 //print $xml;
 
@@ -180,6 +181,8 @@ function createQueriesConfig(&$doc, &$el, $fields, $entityQueries, $dependencyVa
                 $query .= " \n{$tabs2}".implode(" \n{$tabs}",$queryInfo['tables'][$tableGroup]);
             }
             $query .= " \n{$tabs2}".$queryTypeData['filter'].";\n{$tabs3}";
+
+            $query = preg_replace("/\s*\n\s*/is"," ", $query);
 
             $entity->setAttribute($queryType, $query);
         }
